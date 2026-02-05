@@ -27,7 +27,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'sensors',  # nasza aplikacja
 ]
-
+# To jest KLUCZOWE przy błędach 403 przez tunel:
+CSRF_TRUSTED_ORIGINS = ['https://energy.zipit.pl']
 # --- POPRAWKA: Zwiększenie limitu pól POST dla Admina ---
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000
 # --- KONIEC POPRAWKI ---
