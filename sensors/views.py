@@ -584,3 +584,11 @@ def home_redirect(request):
     if request.user.is_authenticated:
         return redirect('dashboard')  # Jeśli zalogowany, idź do dashboardu
     return redirect('login')         # Jeśli nie, idź do logowania
+
+from django.shortcuts import render
+
+def home_view(request):
+    # Jeśli użytkownik jest już zalogowany, opcjonalnie możesz go od razu rzucić do dashboardu
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'home.html')

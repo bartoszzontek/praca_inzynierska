@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Monitor - Monitoruj swój dom</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .hero-section { padding: 100px 0; background: linear-gradient(135deg, #007bff, #00d4ff); color: white; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="#">Energy Monitor</a>
+        <div>
+            <a href="{% url 'login' %}" class="btn btn-outline-light me-2">Zaloguj</a>
+            <a href="{% url 'register' %}" class="btn btn-primary">Zarejestruj</a>
+        </div>
+    </div>
+</nav>
+
+<header class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-3 fw-bold">Monitoruj zużycie energii</h1>
+        <p class="lead mb-4">Inteligentny system analizy danych z czujników w Twoim domu.</p>
+        <a href="{% url 'register' %}" class="btn btn-light btn-lg px-5">Zacznij teraz</a>
+    </div>
+</header>
+
+<main class="container my-5 text-center">
+    <div class="row">
+        <div class="col-md-4">
+            <h3>Dane w czasie rzeczywistym</h3>
+            <p>Śledź parametry swoich czujników sekunda po sekundzie.</p>
+        </div>
+        <div class="col-md-4">
+            <h3>Analiza kosztów</h3>
+            <p>Sprawdzaj, ile wydajesz na prąd dzięki zaawansowanym wykresom.</p>
+        </div>
+        <div class="col-md-4">
+            <h3>Alerty bezpieczeństwa</h3>
+            <p>Otrzymuj powiadomienia o nietypowym zużyciu energii.</p>
+        </div>
+    </div>
+</main>
+
+<footer class="py-4 bg-dark text-white text-center">
+    <p>&copy; 2026 Energy Monitor - Projekt Inżynierski</p>
+</footer>
+
+</body>
+</html>
