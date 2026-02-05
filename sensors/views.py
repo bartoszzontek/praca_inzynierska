@@ -577,3 +577,10 @@ def assign_house_view(request):
     all_houses = House.objects.all().select_related('user').order_by('-created_at')[:50]
     context = {'users': users, 'all_houses': all_houses}
     return render(request, 'admin_assign.html', context)
+
+from django.shortcuts import redirect
+
+def home_redirect(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')  # Jeśli zalogowany, idź do dashboardu
+    return redirect('login')         # Jeśli nie, idź do logowania

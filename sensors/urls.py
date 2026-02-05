@@ -44,11 +44,12 @@ html_urlpatterns = [
     path('dashboard/sensor/<int:sensor_id>/', sensor_detail, name='sensor_detail'),
     path('profile/', profile, name='profile'),
     path('settings/', settings_view, name='settings'),
+
     
     path('alerts/create/', create_alert, name='alert_create'), 
     path('alerts/', alerts_view, name='alerts'),
     path('comparison/<int:house_id>/', comparison_view, name='comparison'),
-    
+    path('', dashboard, name='dashboard'),
     # NOWE ŚCIEŻKI ADMINA
     path('admin-panel/', admin_dashboard, name='admin_dashboard'),
     path('admin-panel/sensors/', admin_sensor_list_view, name='admin_sensor_list'),

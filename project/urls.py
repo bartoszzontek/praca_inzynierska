@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.contrib.auth.views import LoginView, LogoutView
 from rest_framework.authtoken import views as drf_views
-from sensors.views import register
+from sensors.views import register, home_redirect
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -15,6 +15,7 @@ urlpatterns = [
     path('login/', LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', LogoutView.as_view(next_page='/login/'), name='logout'),
     path('register/', register, name='register'),
+    path('', home_redirect, name='home'),
 ]
 
 
