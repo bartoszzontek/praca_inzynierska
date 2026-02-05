@@ -1,14 +1,14 @@
 import os
+import dj_database_url
 from pathlib import Path
 
 # Ścieżka do katalogu projektu
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-ZMIEN-TO-NA-PRODUKCJI-1234567890'
-
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
+# SZYBKA POPRAWKA DLA DOCKERA: Pobieranie klucza i hostów ze zmiennych środowiskowych
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ZMIEN-TO-NA-PRODUKCJI-1234567890')
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,localhost:8001").split(",")
 
 INSTALLED_APPS = [
     'corsheaders',
@@ -24,8 +24,7 @@ INSTALLED_APPS = [
 ]
 
 # --- POPRAWKA: Zwiększenie limitu pól POST dla Admina ---
-# Naprawia błąd TooManyFieldsSent spowodowany dużą liczbą wierszy w Inline (SensorData)
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000
 # --- KONIEC POPRAWKI ---
 
 MIDDLEWARE = [
@@ -59,11 +58,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
+# KONFIGURACJA BAZY DANYCH DLA POSTGRESQL (DOCKER)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        # Jeśli DATABASE_URL nie jest ustawiona (np. lokalnie bez Dockera), użyje SQLite
+        default=f"sqlite:///{BASE_DIR}/db.sqlite3",
+        conn_max_age=600
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -85,6 +86,13 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+
+# To pozwala Django szukać plików w folderach aplikacji (np. admina)
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 # Ustawienia DRF
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -97,7 +105,7 @@ REST_FRAMEWORK = {
 }
 
 # Klucz do podpisywania danych z czujników
-SENSOR_DATA_SECRET = 'klucz-do-podpisywania-danych-ZMIEN-NA-PRODUKCJI'
+SENSOR_DATA_SECRET = os.environ.get('SENSOR_DATA_SECRET', 'klucz-do-podpisywania-danych-ZMIEN-NA-PRODUKCJI')
 
 # Ustawienia logowania
 LOGIN_REDIRECT_URL = '/dashboard/'
@@ -124,8 +132,8 @@ LOGGING = {
             'propagate': False,
         },
     },
-
 }
+
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Adres Twojej aplikacji React
+    "http://localhost:3000",
 ]

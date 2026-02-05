@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: energy_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=energy_monitor
+      - POSTGRES_USER=energy_admin
+      - POSTGRES_PASSWORD=TwojeHaslo123
+    restart: always
+
+  web:
+    build: .
+    container_name: energy_web
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn --bind 0.0.0.0:8000 project.wsgi:application"
+    volumes:
+      - .:/app
+    environment:
+      # Linkujemy się do usługi 'db' zdefiniowanej powyżej
+      - DATABASE_URL=postgres://energy_admin:TwojeHaslo123@db:5432/energy_monitor
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-lokalny-klucz
+      # Dodajemy port do dozwolonych hostów, jeśli jest wymagany
+      - ALLOWED_HOSTS=localhost,127.0.0.1,localhost:8001
+    ports:
+      # MAPOWANIE: Port 8001 na Raspberry Pi -> Port 8000 w kontenerze
+      - "8001:8000"
+    depends_on:
+      - db
+    restart: always
+
+volumes:
+  postgres_data:
