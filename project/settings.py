@@ -8,7 +8,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SZYBKA POPRAWKA DLA DOCKERA: Pobieranie klucza i hostów ze zmiennych środowiskowych
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ZMIEN-TO-NA-PRODUKCJI-1234567890')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,localhost:8001").split(",")
+# project/settings.py
+# Pobieramy hosty z environment lub ustawiamy domyślne dla lokalnego testu
+ALLOWED_HOSTS = os.environ.get(
+    "ALLOWED_HOSTS",
+    "localhost,127.0.0.1,energy.zipit.pl" # Dodaj tutaj swoją domenę
+).split(",")
 
 INSTALLED_APPS = [
     'corsheaders',

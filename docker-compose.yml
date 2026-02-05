@@ -21,15 +21,12 @@ services:
     volumes:
       - .:/app
     environment:
-      # Linkujemy się do usługi 'db' zdefiniowanej powyżej
       - DATABASE_URL=postgres://energy_admin:TwojeHaslo123@db:5432/energy_monitor
+      - ALLOWED_HOSTS=localhost,127.0.0.1,energy.zipit.pl
       - DEBUG=True
-      - SECRET_KEY=django-insecure-lokalny-klucz
-      # Dodajemy port do dozwolonych hostów, jeśli jest wymagany
-      - ALLOWED_HOSTS=localhost,127.0.0.1,localhost:8001
+
     ports:
-      # MAPOWANIE: Port 8001 na Raspberry Pi -> Port 8000 w kontenerze
-      - "8001:8000"
+        - "8001:8000"
     depends_on:
       - db
     restart: always
