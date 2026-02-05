@@ -3,53 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Energy Monitor - Monitoruj swój dom</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Energy Monitor - Inteligentne Zarządzanie Energią</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
-        .hero-section { padding: 100px 0; background: linear-gradient(135deg, #007bff, #00d4ff); color: white; }
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent),
+                        radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.15), transparent);
+            padding: 0 1.5rem;
+        }
+
+        .hero-content h1 {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
+        }
+
+        .hero-content p {
+            color: var(--text-muted);
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+        }
+
+        /* Przyciski w stylu Dashboardu */
+        .btn-group {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .btn-main {
+            padding: 1rem 2.5rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-outline {
+            background: rgba(148, 163, 184, 0.1);
+            border: 1px solid #334155;
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background: rgba(148, 163, 184, 0.2);
+            border-color: var(--accent-blue);
+        }
+
+        /* Features Grid - Styl kart jak w statystykach */
+        .features {
+            padding: 5rem 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid #334155;
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.15);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            border-top: 1px solid #334155;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-content {
+            animation: fadeIn 1s ease-out;
+        }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="#">Energy Monitor</a>
-        <div>
-            <a href="{% url 'login' %}" class="btn btn-outline-light me-2">Zaloguj</a>
-            <a href="{% url 'register' %}" class="btn btn-primary">Zarejestruj</a>
+    <section class="hero">
+        <div class="hero-content">
+            <div style="display: inline-block; padding: 0.5rem 1.5rem; background: rgba(59, 130, 246, 0.1); border-radius: 2rem; color: var(--accent-blue); font-weight: 600; margin-bottom: 1.5rem; border: 1px solid rgba(59, 130, 246, 0.2);">
+                <i class="fas fa-bolt"></i> System Monitorowania Energii 2.0
+            </div>
+            <h1>Energy Monitor</h1>
+            <p>Zautomatyzowany system analizy zużycia energii elektrycznej w Twoim domu. Kontroluj koszty i dbaj o środowisko z jednego miejsca.</p>
+            
+            <div class="btn-group">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="btn-main btn-primary">
+                        <i class="fas fa-chart-pie"></i> Przejdź do Dashboardu
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn-main btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Zaloguj się
+                    </a>
+                    <a href="{% url 'register' %}" class="btn-main btn-outline">
+                        <i class="fas fa-user-plus"></i> Załóż konto
+                    </a>
+                {% endif %}
+            </div>
         </div>
-    </div>
-</nav>
+    </section>
 
-<header class="hero-section text-center">
-    <div class="container">
-        <h1 class="display-3 fw-bold">Monitoruj zużycie energii</h1>
-        <p class="lead mb-4">Inteligentny system analizy danych z czujników w Twoim domu.</p>
-        <a href="{% url 'register' %}" class="btn btn-light btn-lg px-5">Zacznij teraz</a>
-    </div>
-</header>
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-satellite-dish"></i>
+                </div>
+                <h3>Dane Live</h3>
+                <p>Odczyty z Twoich czujników przesyłane są w czasie rzeczywistym bezpośrednio na serwer Raspberry Pi.</p>
+            </div>
 
-<main class="container my-5 text-center">
-    <div class="row">
-        <div class="col-md-4">
-            <h3>Dane w czasie rzeczywistym</h3>
-            <p>Śledź parametry swoich czujników sekunda po sekundzie.</p>
-        </div>
-        <div class="col-md-4">
-            <h3>Analiza kosztów</h3>
-            <p>Sprawdzaj, ile wydajesz na prąd dzięki zaawansowanym wykresom.</p>
-        </div>
-        <div class="col-md-4">
-            <h3>Alerty bezpieczeństwa</h3>
-            <p>Otrzymuj powiadomienia o nietypowym zużyciu energii.</p>
-        </div>
-    </div>
-</main>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <h3>Optymalizacja Kosztów</h3>
+                <p>Analizuj miesięczne wydatki i sprawdzaj, które urządzenia generują największe obciążenie dla portfela.</p>
+            </div>
 
-<footer class="py-4 bg-dark text-white text-center">
-    <p>&copy; 2026 Energy Monitor - Projekt Inżynierski</p>
-</footer>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <h3>Alerty i Bezpieczeństwo</h3>
+                <p>Ustawiaj własne progi alarmowe i otrzymuj powiadomienia, gdy zużycie energii przekroczy normę.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Energy Monitor. Projekt Inżynierski. Serwer: animal-server</p>
+    </footer>
 
 </body>
 </html>
