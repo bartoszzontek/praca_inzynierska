@@ -7,13 +7,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SZYBKA POPRAWKA DLA DOCKERA: Pobieranie klucza i hostów ze zmiennych środowiskowych
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ZMIEN-TO-NA-PRODUKCJI-1234567890')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-# project/settings.py
-# Pobieramy hosty z environment lub ustawiamy domyślne dla lokalnego testu
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
+# Hosty dozwolone
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,energy.zipit.pl" # Dodaj tutaj swoją domenę
+    "localhost,127.0.0.1,energy.zipit.pl"
 ).split(",")
+
+# KLUCZOWE DLA TUNELU CLOUDFLARE:
+CSRF_TRUSTED_ORIGINS = ['https://energy.zipit.pl']
+
+# Informuje Django, że jest za proxy, które obsługuje HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 INSTALLED_APPS = [
     'corsheaders',
@@ -27,11 +33,9 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'sensors',  # nasza aplikacja
 ]
-# To jest KLUCZOWE przy błędach 403 przez tunel:
-CSRF_TRUSTED_ORIGINS = ['https://energy.zipit.pl']
+
 # --- POPRAWKA: Zwiększenie limitu pól POST dla Admina ---
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000
-# --- KONIEC POPRAWKI ---
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -49,7 +53,7 @@ ROOT_URLCONF = 'project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # WAŻNE!
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -67,7 +71,6 @@ WSGI_APPLICATION = 'project.wsgi.application'
 # KONFIGURACJA BAZY DANYCH DLA POSTGRESQL (DOCKER)
 DATABASES = {
     'default': dj_database_url.config(
-        # Jeśli DATABASE_URL nie jest ustawiona (np. lokalnie bez Dockera), użyje SQLite
         default=f"sqlite:///{BASE_DIR}/db.sqlite3",
         conn_max_age=600
     )
@@ -87,18 +90,17 @@ TIME_ZONE = 'Europe/Warsaw'
 USE_I18N = True
 USE_TZ = True
 
+# STATYKA
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
-
-# To pozwala Django szukać plików w folderach aplikacji (np. admina)
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 # Ustawienia DRF
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
