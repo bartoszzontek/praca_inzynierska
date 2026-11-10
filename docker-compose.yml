@@ -39,6 +39,7 @@ services:
   # Co 5 minut sprawdza, czy czujniki wysyłają dane, i tworzy alerty dla nieaktywnych
   scheduler:
     image: energy-monitor-web
+    pull_policy: never
     container_name: energy_scheduler
     command: sh -c "while true; do python manage.py check_offline_sensors; sleep 300; done"
     env_file: .env
