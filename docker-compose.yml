@@ -1,35 +1,75 @@
-version: '3.8'
+# Konfiguracja produkcyjna systemu Energy Monitor.
+# Wszystkie hasła i klucze są w pliku .env (wzór: .env.example), który nie trafia do repozytorium.
 
 services:
   db:
     image: postgres:15-alpine
     container_name: energy_db
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=energy_monitor
-      - POSTGRES_USER=energy_admin
-      - POSTGRES_PASSWORD=TwojeHaslo123
-    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   web:
     build: .
+    image: energy-monitor-web
     container_name: energy_web
     command: >
-      sh -c "python manage.py migrate &&
-             gunicorn --bind 0.0.0.0:8000 project.wsgi:application"
-    volumes:
-      - .:/app
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn project.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
+    env_file: .env
     environment:
-      - DATABASE_URL=postgres://energy_admin:TwojeHaslo123@db:5432/energy_monitor
-      - ALLOWED_HOSTS=localhost,127.0.0.1,energy.zipit.pl
-      - DEBUG=True
-
-    ports:
-        - "8001:8000"
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    volumes:
+      - static_data:/app/staticfiles
     depends_on:
-      - db
-    restart: always
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Co 5 minut sprawdza, czy czujniki wysyłają dane, i tworzy alerty dla nieaktywnych
+  scheduler:
+    image: energy-monitor-web
+    container_name: energy_scheduler
+    command: sh -c "while true; do python manage.py check_offline_sensors; sleep 300; done"
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      - web
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: energy_nginx
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_data:/static:ro
+    ports:
+      - "127.0.0.1:8001:80"
+    depends_on:
+      - web
+    restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: energy_tunnel
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - nginx
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+  static_data:

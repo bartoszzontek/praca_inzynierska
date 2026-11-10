@@ -1,0 +1,6 @@
+.git
+.env
+db.sqlite3
+**/__pycache__
+energy-monitor-frontend
+staticfiles

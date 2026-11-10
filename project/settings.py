@@ -12,11 +12,17 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 # Hosty dozwolone
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,energy.zipit.pl"
+    "localhost,127.0.0.1"
 ).split(",")
 
 # KLUCZOWE DLA TUNELU CLOUDFLARE:
-CSRF_TRUSTED_ORIGINS = ['https://energy.zipit.pl']
+CSRF_TRUSTED_ORIGINS = [
+    o for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o
+]
+
+# Ciasteczka sesji i CSRF tylko przez HTTPS (gdy aplikacja działa produkcyjnie)
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 # Informuje Django, że jest za proxy, które obsługuje HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
