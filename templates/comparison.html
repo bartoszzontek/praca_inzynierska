@@ -414,12 +414,13 @@
   </div>
 </div>
 
+{{ monthly_history|json_script:"monthly-data" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   // Zabezpieczenie przed błędem, gdy dane nie są JSON (np. błąd 500)
   let monthlyData;
   try {
-    monthlyData = JSON.parse('{{ monthly_history|safe|escapejs }}');
+    monthlyData = JSON.parse(document.getElementById('monthly-data').textContent);
   } catch (e) {
     monthlyData = [];
     console.error("Nie można załadować danych historycznych:", e);

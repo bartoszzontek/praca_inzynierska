@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load cost_filters %}
 
 {% block title %}Alerty - Energy Monitor{% endblock %}
 
@@ -351,7 +352,7 @@
       </div>
       <div class="value-box">
         <label>Przekroczenie</label>
-        <div class="value" style="color: #ef4444;">+{{ alert.value|floatformat:1|add:"-"|add:alert.threshold|floatformat:1 }}</div>
+        <div class="value" style="color: #ef4444;">{{ alert.value|abs_diff:alert.threshold|floatformat:1 }}</div>
       </div>
     </div>
     {% endif %}
