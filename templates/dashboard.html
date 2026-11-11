@@ -20,7 +20,7 @@
   }
 
   .dashboard-header p {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 1.1rem;
   }
 
@@ -32,8 +32,8 @@
   }
 
   .stat-card {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border: 1px solid #334155;
+    background: var(--card-gradient);
+    border: 1px solid var(--border);
     border-radius: 1rem;
     padding: 1.5rem;
     display: flex;
@@ -80,7 +80,7 @@
   }
 
   .stat-content h3 {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -88,7 +88,7 @@
   }
 
   .stat-content .value {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 2rem;
     font-weight: 700;
     margin-top: 0.25rem;
@@ -133,7 +133,7 @@
   }
 
   .house-header {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: var(--card-gradient);
     padding: 1.5rem;
     border-bottom: 1px solid var(--border);
   }
@@ -152,12 +152,12 @@
 
   .house-title h2 {
     font-size: 1.5rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-weight: 700;
   }
 
   .house-address {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.95rem;
     display: flex;
     align-items: center;
@@ -170,8 +170,8 @@
   }
 
   .sensor-item {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid #334155;
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
     border-radius: 0.75rem;
     padding: 1.25rem;
     margin-bottom: 1rem;
@@ -206,7 +206,7 @@
   }
 
   .sensor-name h3 {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1.1rem;
     font-weight: 600;
   }
@@ -251,7 +251,7 @@
   }
 
   .sensor-description {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     margin-bottom: 1rem;
     line-height: 1.5;
@@ -285,9 +285,9 @@
   }
 
   .btn-settings {
-    background: rgba(148, 163, 184, 0.1);
-    color: #94a3b8;
-    border: 1px solid #334155;
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
     padding: 0.75rem;
     border-radius: 0.5rem;
     cursor: pointer;
@@ -300,24 +300,24 @@
 
   .btn-settings:hover {
     background: rgba(148, 163, 184, 0.2);
-    color: #f1f5f9;
+    color: var(--text-primary);
   }
 
   .empty-state {
     text-align: center;
     padding: 4rem 2rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
   }
 
   .empty-state i {
     font-size: 5rem;
-    color: #334155;
+    color: var(--border);
     margin-bottom: 1.5rem;
   }
 
   .empty-state h3 {
     font-size: 1.5rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
     margin-bottom: 0.75rem;
   }
 
@@ -339,6 +339,44 @@
       font-size: 2rem;
     }
   }
+
+  /* Cel miesięczny */
+  .goal-card {
+    background: var(--card-gradient);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .goal-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .goal-top h3 { color: var(--text-primary); font-size: 1.1rem; }
+  .goal-top span { color: var(--text-secondary); }
+  .goal-bar {
+    height: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .goal-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #3b82f6);
+    border-radius: 999px;
+  }
+  .goal-fill.exceeded { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+  .house-prediction {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+  }
+  .house-prediction strong { color: var(--text-primary); }
 </style>
 {% endblock %}
 
@@ -408,6 +446,16 @@
   </div>
 </div>
 
+{% if goal %}
+<div class="goal-card">
+  <div class="goal-top">
+    <h3><i class="fas fa-bullseye" style="color: var(--accent);"></i> Cel miesięczny – {{ current_month }}</h3>
+    <span>{{ goal.current|floatformat:2 }} / {{ goal.target|floatformat:0 }} kWh ({{ goal.percent|floatformat:0 }}%)</span>
+  </div>
+  <div class="goal-bar"><div class="goal-fill {% if goal.exceeded %}exceeded{% endif %}" style="width: {{ goal.bar|stringformat:'s' }}%;"></div></div>
+</div>
+{% endif %}
+
 {% if houses_with_costs %}
   <div class="houses-grid">
     {% for item in houses_with_costs %}
@@ -425,10 +473,10 @@
           {% endif %}
         </div>
         
-        <div style="padding: 1rem 1.5rem; background: rgba(15, 23, 42, 0.4); border-bottom: 1px solid #334155;">
+        <div style="padding: 1rem 1.5rem; background: var(--surface-inset-soft); border-bottom: 1px solid var(--border);">
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
             <div>
-              <div style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
+              <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
                 Miesiąc
               </div>
               <div style="color: #3b82f6; font-size: 1.25rem; font-weight: 700;">
@@ -436,7 +484,7 @@
               </div>
             </div>
             <div>
-              <div style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
+              <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
                 Koszt
               </div>
               <div style="color: #f59e0b; font-size: 1.25rem; font-weight: 700;">
@@ -444,7 +492,7 @@
               </div>
             </div>
             <div>
-              <div style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
+              <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
                 Teraz
               </div>
               <div style="color: #10b981; font-size: 1.25rem; font-weight: 700;">
@@ -453,6 +501,14 @@
             </div>
           </div>
         </div>
+
+        {% if item.prediction %}
+        <div class="house-prediction">
+          <i class="fas fa-chart-line"></i>
+          Prognoza na koniec miesiąca: <strong>{{ item.prediction.predicted_kwh|floatformat:1 }} kWh</strong>
+          (ok. <strong>{{ item.prediction.predicted_cost|floatformat:2 }} PLN</strong>)
+        </div>
+        {% endif %}
 
         <div class="sensors-list">
           {% if item.house.sensors.all %}
@@ -492,7 +548,7 @@
               </div>
             {% endfor %}
           {% else %}
-            <p style="text-align: center; color: #94a3b8; padding: 2rem;">
+            <p style="text-align: center; color: var(--text-secondary); padding: 2rem;">
               <i class="fas fa-inbox" style="font-size: 2rem; display: block; margin-bottom: 1rem; opacity: 0.5;"></i>
               Brak czujników w tym domu
             </p>

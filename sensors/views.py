@@ -10,6 +10,11 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Avg, Max, Min, Count
 from django.db import models
+from django.utils.http import url_has_allowed_host_and_scheme
+
+MONTHS_PL = ['', 'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+             'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień']
+MONTHS_PL_SHORT = ['', 'sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru']
 
 try:
     from .forms import CustomUserCreationForm
@@ -86,7 +91,7 @@ def register(request):
     else:
         form = CustomUserCreationForm()
     
-    return render(request, 'login.html', {'form': form})
+    return render(request, 'login.html', {'register_form': form})
 
 @login_required
 def profile(request):
@@ -102,22 +107,42 @@ def profile(request):
 def settings_view(request):
     user_settings, created = UserSettings.objects.get_or_create(user=request.user)
     if request.method == 'POST':
-        user_settings.theme = request.POST.get('theme', 'dark')
+        theme = request.POST.get('theme', 'dark')
+        user_settings.theme = theme if theme in ('dark', 'light') else 'dark'
         user_settings.email_alerts = request.POST.get('email_alerts') == 'on'
-        user_settings.alert_frequency = request.POST.get('alert_frequency', 'immediate')
-        user_settings.live_refresh_interval = int(request.POST.get('live_refresh_interval', 5))
+        frequency = request.POST.get('alert_frequency', 'immediate')
+        user_settings.alert_frequency = frequency if frequency in ('immediate', 'hourly', 'daily') else 'immediate'
+        try:
+            interval = int(request.POST.get('live_refresh_interval', 5))
+        except (TypeError, ValueError):
+            interval = 5
+        user_settings.live_refresh_interval = min(60, max(1, interval))
         user_settings.show_predictions = request.POST.get('show_predictions') == 'on'
-        monthly_goal = request.POST.get('monthly_goal_kwh')
-        if monthly_goal:
-            try: user_settings.monthly_goal_kwh = float(monthly_goal)
-            except (ValueError, TypeError): user_settings.monthly_goal_kwh = None
-        else: user_settings.monthly_goal_kwh = None
+        monthly_goal = (request.POST.get('monthly_goal_kwh') or '').replace(',', '.').strip()
+        try:
+            goal = float(monthly_goal) if monthly_goal else None
+        except ValueError:
+            goal = None
+        user_settings.monthly_goal_kwh = goal if goal and goal > 0 else None
         user_settings.save()
         log_activity(user=request.user, action='update', model_name='UserSettings', object_id=user_settings.id, description="Zaktualizowano ustawienia użytkownika", request=request)
         messages.success(request, 'Ustawienia zapisane!')
         return redirect('settings')
     context = {'user_settings': user_settings}
     return render(request, 'settings.html', context)
+
+
+@login_required
+def toggle_theme(request):
+    """Szybkie przełączenie motywu jasny / ciemny z paska nawigacji."""
+    if request.method == 'POST':
+        user_settings, _ = UserSettings.objects.get_or_create(user=request.user)
+        user_settings.theme = 'light' if user_settings.theme == 'dark' else 'dark'
+        user_settings.save(update_fields=['theme', 'updated_at'])
+    next_url = request.POST.get('next') or request.GET.get('next') or ''
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = 'dashboard'
+    return redirect(next_url)
 
 
 #API ENDPOINTS
@@ -143,15 +168,6 @@ def receive_sensor_readings(request):
             check_alerts(sensor, sensor_data)
         return Response({"status": "ok"}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['POST'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAdminUser])
-def add_sensor_data(request, sensor_id):
-    # (bez zmian)
-    pass
-
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -380,52 +396,52 @@ def live_data_view(request, sensor_id):
 # ========== STARE WIDOKI HTML (ZOSTAJĄ) ==========
 @login_required
 def dashboard(request):
-    houses = House.objects.filter(user=request.user).prefetch_related('sensors', 'sensors__data')
+    houses = House.objects.filter(user=request.user).prefetch_related('sensors')
     now = timezone.now()
     start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    user_settings, _ = UserSettings.objects.get_or_create(user=request.user)
     all_sensors = Sensor.objects.filter(house__user=request.user)
     total_sensors = all_sensors.count()
-    online_sensors = 0
-    last_reading_time = None
-    if total_sensors > 0:
-        latest_data = SensorData.objects.filter(sensor__house__user=request.user).order_by('-timestamp').first()
-        if latest_data: last_reading_time = latest_data.timestamp
-        for sensor in all_sensors:
-            if sensor.is_online: online_sensors += 1
+    online_sensors = sum(1 for sensor in all_sensors if sensor.is_online)
+    latest_data = SensorData.objects.filter(sensor__house__user=request.user).order_by('-timestamp').first()
+    last_reading_time = latest_data.timestamp if latest_data else None
+
     houses_with_costs = []
+    total_month_kwh = 0
     for house in houses:
-        sensors_in_house = house.sensors.all()
-        total_energy_wh = 0
-        total_power_now = 0
-        sensor_count_in_house = 0
-        for sensor in sensors_in_house:
-            monthly_data = SensorData.objects.filter(sensor=sensor, timestamp__gte=start_of_month).order_by('timestamp')
-            if monthly_data.exists():
-                data_list = list(monthly_data)
-                for i in range(1, len(data_list)):
-                    dt = (data_list[i].timestamp - data_list[i - 1].timestamp).total_seconds()
-                    if dt > 0 and dt < 3600:
-                        power = float(data_list[i].power) if data_list[i].power else 0
-                        total_energy_wh += power * (dt / 3600.0)
-                last_reading_in_sensor = data_list[-1]
-                if last_reading_in_sensor and last_reading_in_sensor.power:
-                    if (now - last_reading_in_sensor.timestamp) < timedelta(minutes=5):
-                        total_power_now += float(last_reading_in_sensor.power)
-                sensor_count_in_house += 1
-        total_energy_kwh = total_energy_wh / 1000.0
-        monthly_cost = total_energy_kwh * house.price_per_kwh
-        prediction = predict_monthly_cost(house)
-        comparison = get_comparison_data(house, 'month')
+        monthly_kwh = calculate_energy_for_period(house, start_of_month, now)
+        total_month_kwh += monthly_kwh
+        current_power = 0
+        sensor_count = 0
+        for sensor in house.sensors.all():
+            last = sensor.data.order_by('-timestamp').first()
+            if last:
+                sensor_count += 1
+                if last.power and (now - last.timestamp) < timedelta(minutes=5):
+                    current_power += float(last.power)
         houses_with_costs.append({
-            'house': house, 'monthly_kwh': round(total_energy_kwh, 2), 'monthly_cost': round(monthly_cost, 2),
-            'current_power': round(total_power_now, 0), 'sensor_count': sensor_count_in_house,
-            'prediction': prediction, 'comparison': comparison,
+            'house': house, 'monthly_kwh': round(monthly_kwh, 2),
+            'monthly_cost': round(monthly_kwh * house.price_per_kwh, 2),
+            'current_power': round(current_power, 0), 'sensor_count': sensor_count,
+            'prediction': predict_monthly_cost(house) if user_settings.show_predictions else None,
         })
+
+    goal = None
+    if user_settings.monthly_goal_kwh:
+        percent = total_month_kwh / user_settings.monthly_goal_kwh * 100
+        goal = {
+            'target': user_settings.monthly_goal_kwh, 'current': round(total_month_kwh, 2),
+            'percent': round(percent, 1), 'bar': min(100, round(percent, 1)),
+            'exceeded': percent > 100,
+        }
+
     unread_alerts = Alert.objects.filter(house__user=request.user, is_read=False).order_by('-created_at')[:5]
     context = {
-        'houses': houses, 'houses_with_costs': houses_with_costs, 'current_month': now.strftime('%B %Y'),
+        'houses': houses, 'houses_with_costs': houses_with_costs,
+        'current_month': f"{MONTHS_PL[now.month]} {now.year}",
         'unread_alerts': unread_alerts, 'total_sensors': total_sensors, 'online_sensors': online_sensors,
-        'last_reading_time': last_reading_time,
+        'last_reading_time': last_reading_time, 'goal': goal,
+        'show_predictions': user_settings.show_predictions,
     }
     return render(request, 'dashboard.html', context)
 
@@ -445,8 +461,10 @@ def sensor_detail(request, sensor_id):
     recent_readings = SensorData.objects.filter(sensor=sensor).order_by('-timestamp')[:5]
     avg_stats = recent_readings.aggregate(power=Avg('power'), voltage=Avg('voltage'), current=Avg('current'), pf=Avg('pf'))
     user_settings, _ = UserSettings.objects.get_or_create(user=request.user)
+    latest = last_10_readings[0] if last_10_readings else None
+    cost_per_hour = (latest.power / 1000.0) * price_per_kwh if latest and latest.power else 0
     context = {
-        'sensor': sensor, 'avg_stats': avg_stats, 'daily_kwh': daily_kwh, 'daily_cost': daily_cost,
+        'sensor': sensor, 'avg_stats': avg_stats, 'cost_per_hour': cost_per_hour, 'daily_kwh': daily_kwh, 'daily_cost': daily_cost,
         'monthly_kwh': monthly_kwh, 'monthly_cost': monthly_cost, 'last_10_readings': last_10_readings,
         'refresh_interval': user_settings.live_refresh_interval,
     }
@@ -481,9 +499,39 @@ def alerts_view(request):
     if filter_severity: alerts = alerts.filter(severity=filter_severity)
     if filter_status == 'unread': alerts = alerts.filter(is_read=False)
     elif filter_status == 'resolved': alerts = alerts.filter(is_resolved=True)
-    elif filter_status == 'active': alerts = alerts.filter(is_read=False, is_resolved=False)
+    elif filter_status == 'active': alerts = alerts.filter(is_resolved=False)
     context = {'alerts': alerts[:50], 'filter_type': filter_type, 'filter_severity': filter_severity, 'filter_status': filter_status}
     return render(request, 'alerts.html', context)
+
+@login_required
+def alert_action(request, alert_id, action):
+    """Oznaczenie alertu jako przeczytany / rozwiązany z poziomu strony alertów."""
+    if request.method != 'POST':
+        return redirect('alerts')
+    alert = get_object_or_404(Alert, id=alert_id, house__user=request.user)
+    if action == 'read':
+        alert.is_read = True
+        alert.save(update_fields=['is_read'])
+    elif action == 'resolve':
+        alert.is_read = True
+        alert.is_resolved = True
+        alert.save(update_fields=['is_read', 'is_resolved'])
+    elif action == 'delete':
+        alert.delete()
+        messages.success(request, 'Alert usunięty.')
+    next_url = request.POST.get('next', '')
+    if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return redirect(next_url)
+    return redirect('alerts')
+
+
+@login_required
+def alerts_mark_all_read(request):
+    if request.method == 'POST':
+        count = Alert.objects.filter(house__user=request.user, is_read=False).update(is_read=True)
+        messages.success(request, f'Oznaczono jako przeczytane: {count}')
+    return redirect('alerts')
+
 
 @login_required
 def comparison_view(request, house_id):
@@ -510,11 +558,13 @@ def comparison_view(request, house_id):
             month_start = (month_end - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             current_month_start = month_start
         month_kwh = calculate_energy_for_period(house, month_start, month_end)
-        monthly_history.append({'month': month_start.strftime('%b %Y'), 'kwh': round(month_kwh, 2), 'cost': round(month_kwh * house.price_per_kwh, 2)})
+        monthly_history.append({'month': f"{MONTHS_PL_SHORT[month_start.month]} {month_start.year}", 'kwh': round(month_kwh, 2), 'cost': round(month_kwh * house.price_per_kwh, 2)})
     monthly_history.reverse()
+    user_settings, _ = UserSettings.objects.get_or_create(user=request.user)
     context = {
         'house': house, 'day_comparison': day_comparison, 'week_comparison': week_comparison,
         'month_comparison': month_comparison, 'prediction': prediction,
+        'show_predictions': user_settings.show_predictions,
         'sensor_rankings': sensor_rankings, 'monthly_history': monthly_history,
     }
     return render(request, 'comparison.html', context)
@@ -565,9 +615,15 @@ def assign_house_view(request):
     if not request.user.is_staff: return HttpResponseForbidden("Brak dostępu")
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
-        house_name = request.POST.get('house_name')
-        address = request.POST.get('address', '')
-        price_per_kwh = float(request.POST.get('price_per_kwh', 0.80))
+        house_name = (request.POST.get('house_name') or '').strip()
+        address = (request.POST.get('address') or '').strip()
+        try:
+            price_per_kwh = float((request.POST.get('price_per_kwh') or '0.80').replace(',', '.'))
+        except ValueError:
+            price_per_kwh = -1
+        if not house_name or price_per_kwh < 0:
+            messages.error(request, 'Podaj nazwę domu i poprawną cenę za kWh.')
+            return redirect('assign_house')
         user = get_object_or_404(User, id=user_id)
         house = House.objects.create(user=user, name=house_name, address=address, price_per_kwh=price_per_kwh)
         log_activity(user=request.user, action='assign', model_name='House', object_id=house.id, description=f"Przypisano dom '{house_name}' do użytkownika {user.username}", request=request)
@@ -578,14 +634,10 @@ def assign_house_view(request):
     context = {'users': users, 'all_houses': all_houses}
     return render(request, 'admin_assign.html', context)
 
-from django.shortcuts import redirect
-
 def home_redirect(request):
     if request.user.is_authenticated:
         return redirect('dashboard')  # Jeśli zalogowany, idź do dashboardu
     return redirect('login')         # Jeśli nie, idź do logowania
-
-from django.shortcuts import render
 
 def home_view(request):
     # Jeśli użytkownik jest już zalogowany, opcjonalnie możesz go od razu rzucić do dashboardu

@@ -22,7 +22,7 @@
 
   .form-header h1 {
     font-size: 2rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -34,7 +34,7 @@
   
   .form-group label {
     display: block;
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-weight: 600;
     margin-bottom: 0.5rem;
   }
@@ -42,10 +42,10 @@
   .form-control {
     width: 100%;
     padding: 0.75rem 1rem;
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid #334155;
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
     border-radius: 0.5rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1rem;
     transition: all 0.3s ease;
   }
@@ -116,7 +116,7 @@
       <div class="form-group">
         {{ form.sensor.label_tag }}
         {{ form.sensor }}
-        <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 5px;">(Opcjonalne. Zostaw puste, jeśli alert dotyczy całego domu)</small>
+        <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 5px;">(Opcjonalne. Zostaw puste, jeśli alert dotyczy całego domu)</small>
         {% if form.sensor.errors %}<div class="error-message">{{ form.sensor.errors }}</div>{% endif %}
       </div>
       

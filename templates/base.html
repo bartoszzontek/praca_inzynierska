@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="pl" data-theme="{{ user_theme|default:'dark' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,11 +25,39 @@
       --danger: #ef4444;
       --border: #334155;
       --shadow: rgba(0, 0, 0, 0.3);
+      --text-muted: #64748b;
+      --page-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      --card-gradient: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      --surface-inset: rgba(15, 23, 42, 0.6);
+      --surface-inset-soft: rgba(15, 23, 42, 0.4);
+      --surface-hover: rgba(148, 163, 184, 0.1);
+      --chart-grid: rgba(148, 163, 184, 0.15);
+      color-scheme: dark;
+    }
+
+    /* Motyw jasny – wybierany w ustawieniach użytkownika */
+    [data-theme="light"] {
+      --bg-primary: #f1f5f9;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --border: #cbd5e1;
+      --shadow: rgba(15, 23, 42, 0.08);
+      --page-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      --card-gradient: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+      --surface-inset: #f8fafc;
+      --surface-inset-soft: #f1f5f9;
+      --surface-hover: rgba(15, 23, 42, 0.05);
+      --chart-grid: rgba(15, 23, 42, 0.08);
+      color-scheme: light;
     }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      background: var(--page-gradient);
+      background-attachment: fixed;
       color: var(--text-primary);
       min-height: 100vh;
       line-height: 1.6;
@@ -132,6 +160,51 @@
       display: inline;
     }
 
+    .btn-theme {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .btn-theme:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Komunikaty (messages) */
+    .messages {
+      max-width: 1400px;
+      margin: 1rem auto 0;
+      padding: 0 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .message {
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .message.success { border-color: var(--success); }
+    .message.error { border-color: var(--danger); }
+    .message.warning { border-color: var(--warning); }
+
     /* Container */
     .container {
       max-width: 1400px;
@@ -213,23 +286,36 @@
           Dashboard
         </a>
         
-        <a href="{% url 'alerts' %}" class="nav-link {% if request.path == '/alerts/' %}active{% endif %}">
+        <a href="{% url 'alerts' %}" class="nav-link {% if request.path == '/dashboard/alerts/' %}active{% endif %}">
           <i class="fas fa-bell"></i>
           Alerty
         </a>
 
         {% if user.is_staff %}
-        <a href="{% url 'admin_dashboard' %}" class="nav-link {% if request.path == '/admin-panel/' %}active{% endif %}">
+        <a href="{% url 'admin_dashboard' %}" class="nav-link {% if '/dashboard/admin-panel/' in request.path %}active{% endif %}">
           <i class="fas fa-crown"></i>
           Admin Panel
         </a>
         {% endif %}
         
-        <a href="{% url 'profile' %}" class="nav-link {% if request.path == '/profile/' %}active{% endif %}">
+        <a href="{% url 'settings' %}" class="nav-link {% if request.path == '/dashboard/settings/' %}active{% endif %}">
+          <i class="fas fa-cog"></i>
+          Ustawienia
+        </a>
+
+        <a href="{% url 'profile' %}" class="nav-link {% if request.path == '/dashboard/profile/' %}active{% endif %}">
           <i class="fas fa-user"></i>
           {{ user.username }}
         </a>
         
+        <form action="{% url 'toggle_theme' %}" method="POST" class="logout-form-wrapper">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" class="btn-theme" title="Przełącz motyw jasny / ciemny">
+            {% if user_theme == 'light' %}<i class="fas fa-moon"></i>{% else %}<i class="fas fa-sun"></i>{% endif %}
+          </button>
+        </form>
+
         <form action="{% url 'logout' %}" method="POST" class="logout-form-wrapper">
           {% csrf_token %}
           <button type="submit" class="btn-logout">
@@ -240,6 +326,17 @@
       </div>
     </div>
   </nav>
+  {% endif %}
+
+  {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+    <div class="message {{ message.tags }}">
+      {% if message.tags == 'success' %}<i class="fas fa-check-circle" style="color: var(--success);"></i>{% elif message.tags == 'error' %}<i class="fas fa-exclamation-circle" style="color: var(--danger);"></i>{% else %}<i class="fas fa-info-circle" style="color: var(--accent);"></i>{% endif %}
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
   {% endif %}
 
   <div class="container">

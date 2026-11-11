@@ -5,8 +5,8 @@
 {% block extra_css %}
 <style>
   .admin-header {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border: 1px solid #334155;
+    background: var(--card-gradient);
+    border: 1px solid var(--border);
     border-radius: 1rem;
     padding: 2rem;
     margin-bottom: 2rem;
@@ -15,7 +15,7 @@
 
   .admin-header h1 {
     font-size: 2.5rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
     margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
@@ -23,7 +23,7 @@
   }
 
   .admin-header p {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 1.1rem;
   }
 
@@ -92,13 +92,13 @@
   .stat-icon.purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
 
   .stat-label {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
   }
 
   .stat-value {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 2.5rem;
     font-weight: 700;
   }
@@ -127,7 +127,7 @@
   }
 
   .panel-header h2 {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1.25rem;
     display: flex;
     align-items: center;
@@ -144,9 +144,9 @@
     display: flex;
     gap: 1rem;
     padding: 1rem;
-    background: rgba(15, 23, 42, 0.6);
+    background: var(--surface-inset);
     border-radius: 0.75rem;
-    border: 1px solid #334155;
+    border: 1px solid var(--border);
     transition: all 0.3s ease;
   }
 
@@ -176,13 +176,13 @@
   }
 
   .activity-description {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 0.95rem;
     margin-bottom: 0.25rem;
   }
 
   .activity-meta {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.85rem;
   }
 
@@ -197,9 +197,9 @@
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: rgba(15, 23, 42, 0.6);
+    background: var(--surface-inset);
     border-radius: 0.75rem;
-    border: 1px solid #334155;
+    border: 1px solid var(--border);
   }
 
   .user-rank {
@@ -223,12 +223,12 @@
   }
 
   .user-name {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-weight: 600;
   }
 
   .user-houses {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.85rem;
   }
 
@@ -379,7 +379,7 @@
         </div>
       </div>
       {% empty %}
-      <p style="text-align: center; color: #64748b;">Brak aktywności</p>
+      <p style="text-align: center; color: var(--text-muted);">Brak aktywności</p>
       {% endfor %}
     </div>
   </div>
@@ -400,11 +400,11 @@
         </div>
         <div class="user-consumption">
           <div class="user-kwh">{{ item.kwh }}</div>
-          <div style="color: #64748b; font-size: 0.85rem;">kWh</div>
+          <div style="color: var(--text-muted); font-size: 0.85rem;">kWh</div>
         </div>
       </div>
       {% empty %}
-      <p style="text-align: center; color: #64748b;">Brak danych</p>
+      <p style="text-align: center; color: var(--text-muted);">Brak danych</p>
       {% endfor %}
     </div>
   </div>
@@ -428,7 +428,7 @@
     </div>
   </div>
   <div style="text-align: center; padding: 2rem;">
-    <p style="color: #94a3b8; margin-bottom: 1rem;">
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
       System wymaga Twojej uwagi. Sprawdź alerty i podejmij odpowiednie działania.
     </p>
     <a href="{% url 'alerts' %}" class="btn-action">

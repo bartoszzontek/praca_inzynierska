@@ -11,7 +11,7 @@
 
   .comparison-header h1 {
     font-size: 2rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -25,8 +25,8 @@
   }
 
   .comparison-card {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border: 1px solid #334155;
+    background: var(--card-gradient);
+    border: 1px solid var(--border);
     border-radius: 1rem;
     padding: 1.5rem;
     transition: all 0.3s ease;
@@ -39,7 +39,7 @@
   }
 
   .comparison-title {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -61,13 +61,13 @@
   }
 
   .value-label {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.8rem;
     margin-bottom: 0.25rem;
   }
 
   .value-number {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1.5rem;
     font-weight: 700;
   }
@@ -90,8 +90,8 @@
   }
 
   .change-indicator.neutral {
-    background: rgba(148, 163, 184, 0.1);
-    color: #94a3b8;
+    background: var(--surface-hover);
+    color: var(--text-secondary);
   }
 
   .prediction-section {
@@ -110,7 +110,7 @@
   }
 
   .prediction-header h2 {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1.5rem;
     display: flex;
     align-items: center;
@@ -124,14 +124,14 @@
   }
 
   .prediction-item {
-    background: rgba(15, 23, 42, 0.6);
+    background: var(--surface-inset);
     padding: 1.25rem;
     border-radius: 0.75rem;
-    border: 1px solid #334155;
+    border: 1px solid var(--border);
   }
 
   .prediction-item label {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.85rem;
     display: block;
     margin-bottom: 0.5rem;
@@ -152,7 +152,7 @@
   }
 
   .ranking-header {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1.5rem;
     margin-bottom: 1.5rem;
     display: flex;
@@ -171,9 +171,9 @@
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: rgba(15, 23, 42, 0.6);
+    background: var(--surface-inset);
     border-radius: 0.75rem;
-    border: 1px solid #334155;
+    border: 1px solid var(--border);
     transition: all 0.3s ease;
   }
 
@@ -212,13 +212,13 @@
   }
 
   .rank-name {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-weight: 600;
     font-size: 1.1rem;
   }
 
   .rank-location {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.9rem;
   }
 
@@ -233,7 +233,7 @@
   }
 
   .rank-cost {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.9rem;
   }
 
@@ -245,7 +245,7 @@
   }
 
   .chart-header {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1.5rem;
     margin-bottom: 1.5rem;
     display: flex;
@@ -274,16 +274,18 @@
       <div class="value-item">
         <div class="value-label">Dziś</div>
         <div class="value-number">{{ day_comparison.current|floatformat:1 }}</div>
-        <div style="color: #64748b; font-size: 0.8rem;">kWh</div>
+        <div style="color: var(--text-muted); font-size: 0.8rem;">kWh</div>
       </div>
       <div class="value-item">
         <div class="value-label">Wczoraj</div>
         <div class="value-number">{{ day_comparison.previous|floatformat:1 }}</div>
-        <div style="color: #64748b; font-size: 0.8rem;">kWh</div>
+        <div style="color: var(--text-muted); font-size: 0.8rem;">kWh</div>
       </div>
     </div>
-    <div class="change-indicator {% if day_comparison.change_percent > 0 %}positive{% elif day_comparison.change_percent < 0 %}negative{% else %}neutral{% endif %}">
-      {% if day_comparison.change_percent > 0 %}
+    <div class="change-indicator {% if not day_comparison.previous %}neutral{% elif day_comparison.change_percent > 0 %}positive{% elif day_comparison.change_percent < 0 %}negative{% else %}neutral{% endif %}">
+      {% if not day_comparison.previous %}
+        <i class="fas fa-minus"></i> Brak danych z poprzedniego okresu
+      {% elif day_comparison.change_percent > 0 %}
         <i class="fas fa-arrow-up"></i> +{{ day_comparison.change_percent|floatformat:1 }}%
       {% elif day_comparison.change_percent < 0 %}
         <i class="fas fa-arrow-down"></i> {{ day_comparison.change_percent|floatformat:1 }}%
@@ -302,16 +304,18 @@
       <div class="value-item">
         <div class="value-label">Ten tydzień</div>
         <div class="value-number">{{ week_comparison.current|floatformat:1 }}</div>
-        <div style="color: #64748b; font-size: 0.8rem;">kWh</div>
+        <div style="color: var(--text-muted); font-size: 0.8rem;">kWh</div>
       </div>
       <div class="value-item">
         <div class="value-label">Poprzedni</div>
         <div class="value-number">{{ week_comparison.previous|floatformat:1 }}</div>
-        <div style="color: #64748b; font-size: 0.8rem;">kWh</div>
+        <div style="color: var(--text-muted); font-size: 0.8rem;">kWh</div>
       </div>
     </div>
-    <div class="change-indicator {% if week_comparison.change_percent > 0 %}positive{% elif week_comparison.change_percent < 0 %}negative{% else %}neutral{% endif %}">
-      {% if week_comparison.change_percent > 0 %}
+    <div class="change-indicator {% if not week_comparison.previous %}neutral{% elif week_comparison.change_percent > 0 %}positive{% elif week_comparison.change_percent < 0 %}negative{% else %}neutral{% endif %}">
+      {% if not week_comparison.previous %}
+        <i class="fas fa-minus"></i> Brak danych z poprzedniego okresu
+      {% elif week_comparison.change_percent > 0 %}
         <i class="fas fa-arrow-up"></i> +{{ week_comparison.change_percent|floatformat:1 }}%
       {% elif week_comparison.change_percent < 0 %}
         <i class="fas fa-arrow-down"></i> {{ week_comparison.change_percent|floatformat:1 }}%
@@ -330,16 +334,18 @@
       <div class="value-item">
         <div class="value-label">Ten miesiąc</div>
         <div class="value-number">{{ month_comparison.current|floatformat:1 }}</div>
-        <div style="color: #64748b; font-size: 0.8rem;">kWh</div>
+        <div style="color: var(--text-muted); font-size: 0.8rem;">kWh</div>
       </div>
       <div class="value-item">
         <div class="value-label">Poprzedni</div>
         <div class="value-number">{{ month_comparison.previous|floatformat:1 }}</div>
-        <div style="color: #64748b; font-size: 0.8rem;">kWh</div>
+        <div style="color: var(--text-muted); font-size: 0.8rem;">kWh</div>
       </div>
     </div>
-    <div class="change-indicator {% if month_comparison.change_percent > 0 %}positive{% elif month_comparison.change_percent < 0 %}negative{% else %}neutral{% endif %}">
-      {% if month_comparison.change_percent > 0 %}
+    <div class="change-indicator {% if not month_comparison.previous %}neutral{% elif month_comparison.change_percent > 0 %}positive{% elif month_comparison.change_percent < 0 %}negative{% else %}neutral{% endif %}">
+      {% if not month_comparison.previous %}
+        <i class="fas fa-minus"></i> Brak danych z poprzedniego okresu
+      {% elif month_comparison.change_percent > 0 %}
         <i class="fas fa-arrow-up"></i> +{{ month_comparison.change_percent|floatformat:1 }}%
       {% elif month_comparison.change_percent < 0 %}
         <i class="fas fa-arrow-down"></i> {{ month_comparison.change_percent|floatformat:1 }}%
@@ -350,6 +356,7 @@
   </div>
 </div>
 
+{% if show_predictions %}
 <div class="prediction-section">
   <div class="prediction-header">
     <h2><i class="fas fa-crystal-ball"></i> Predykcja końca miesiąca</h2>
@@ -373,6 +380,7 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 <div class="ranking-section">
   <h2 class="ranking-header">
@@ -417,6 +425,7 @@
 {{ monthly_history|json_script:"monthly-data" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+  const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   // Zabezpieczenie przed błędem, gdy dane nie są JSON (np. błąd 500)
   let monthlyData;
   try {
@@ -445,25 +454,25 @@
       plugins: {
         legend: {
           labels: {
-            color: '#f1f5f9'
+            color: cssVar('--text-primary')
           }
         }
       },
       scales: {
         x: {
           grid: {
-            color: '#334155'
+            color: cssVar('--chart-grid')
           },
           ticks: {
-            color: '#94a3b8'
+            color: cssVar('--text-secondary')
           }
         },
         y: {
           grid: {
-            color: '#334155'
+            color: cssVar('--chart-grid')
           },
           ticks: {
-            color: '#94a3b8'
+            color: cssVar('--text-secondary')
           }
         }
       }

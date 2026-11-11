@@ -6,11 +6,12 @@ from .views import (
     UserHouseViewSet, UserSensorViewSet, AlertViewSet,
     UserSettingsViewSet,
     # API Functions
-    sensor_data_view, add_sensor_data, receive_sensor_readings,
+    sensor_data_view, receive_sensor_readings,
     live_data_view, user_me_view,
     # HTML Views
     dashboard, sensor_detail, register, profile, settings_view,
     alerts_view, create_alert, comparison_view,
+    toggle_theme, alert_action, alerts_mark_all_read,
     admin_dashboard, assign_house_view,
     admin_sensor_list_view,
 )
@@ -39,8 +40,11 @@ html_urlpatterns = [
     path('sensor/<int:sensor_id>/', sensor_detail, name='sensor_detail'),
     path('profile/', profile, name='profile'),
     path('settings/', settings_view, name='settings'),
+    path('settings/theme/', toggle_theme, name='toggle_theme'),
     path('alerts/create/', create_alert, name='alert_create'),
     path('alerts/', alerts_view, name='alerts'),
+    path('alerts/mark-all-read/', alerts_mark_all_read, name='alerts_mark_all_read'),
+    path('alerts/<int:alert_id>/<str:action>/', alert_action, name='alert_action'),
     path('comparison/<int:house_id>/', comparison_view, name='comparison'),
 
     # NOWE ŚCIEŻKI ADMINA

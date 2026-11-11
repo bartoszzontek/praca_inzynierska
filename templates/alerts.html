@@ -17,7 +17,7 @@
 
   .alerts-header h1 {
     font-size: 2rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -62,7 +62,7 @@
   }
 
   .filter-group label {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.85rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -70,10 +70,10 @@
 
   .filter-select {
     padding: 0.5rem 1rem;
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid #334155;
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
     border-radius: 0.5rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
     cursor: pointer;
   }
 
@@ -148,7 +148,7 @@
   }
 
   .alert-type {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1.1rem;
     font-weight: 600;
   }
@@ -181,7 +181,7 @@
   }
 
   .alert-message {
-    color: #94a3b8;
+    color: var(--text-secondary);
     margin-bottom: 1rem;
     line-height: 1.6;
   }
@@ -191,11 +191,11 @@
     justify-content: space-between;
     align-items: center;
     padding-top: 1rem;
-    border-top: 1px solid #334155;
+    border-top: 1px solid var(--border);
   }
 
   .alert-location {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.9rem;
     display: flex;
     align-items: center;
@@ -203,7 +203,7 @@
   }
 
   .alert-time {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.85rem;
   }
 
@@ -214,21 +214,21 @@
   }
 
   .value-box {
-    background: rgba(15, 23, 42, 0.6);
+    background: var(--surface-inset);
     padding: 0.75rem;
     border-radius: 0.5rem;
     flex: 1;
   }
 
   .value-box label {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.8rem;
     display: block;
     margin-bottom: 0.25rem;
   }
 
   .value-box .value {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1.25rem;
     font-weight: 700;
   }
@@ -236,12 +236,12 @@
   .empty-state {
     text-align: center;
     padding: 4rem 2rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
   }
 
   .empty-state i {
     font-size: 5rem;
-    color: #334155;
+    color: var(--border);
     margin-bottom: 1.5rem;
   }
 
@@ -261,6 +261,33 @@
       align-items: start;
     }
   }
+
+  .alert-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .alert-actions form { margin: 0; }
+  .btn-alert {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.9rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+  }
+  .btn-alert:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-alert.success:hover { border-color: var(--success); color: var(--success); }
+  .btn-alert.danger:hover { border-color: var(--danger); color: var(--danger); }
+  .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 </style>
 {% endblock %}
 
@@ -268,9 +295,15 @@
 <div class="alerts-header">
   <h1><i class="fas fa-bell"></i> Alerty i powiadomienia</h1>
   
-  <a href="{% url 'alert_create' %}" class="btn-create">
-    <i class="fas fa-plus-circle"></i> Dodaj alert
-  </a>
+  <div class="header-actions">
+    <form method="post" action="{% url 'alerts_mark_all_read' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-alert" style="padding: 0.75rem 1.25rem;"><i class="fas fa-check-double"></i> Oznacz wszystkie jako przeczytane</button>
+    </form>
+    <a href="{% url 'alert_create' %}" class="btn-create">
+      <i class="fas fa-plus-circle"></i> Dodaj alert
+    </a>
+  </div>
 </div>
 
 <div class="filters">
@@ -279,9 +312,12 @@
     <select class="filter-select" onchange="applyFilters('type', this.value)">
       <option value="">Wszystkie</option>
       <option value="power_high" {% if filter_type == 'power_high' %}selected{% endif %}>Przekroczenie mocy</option>
+      <option value="current_high" {% if filter_type == 'current_high' %}selected{% endif %}>Przekroczenie prądu</option>
+      <option value="voltage_anomaly" {% if filter_type == 'voltage_anomaly' %}selected{% endif %}>Anomalia napięcia</option>
       <option value="monthly_limit" {% if filter_type == 'monthly_limit' %}selected{% endif %}>Limit miesięczny</option>
       <option value="sensor_offline" {% if filter_type == 'sensor_offline' %}selected{% endif %}>Czujnik offline</option>
-      <option value="anomaly" {% if filter_type == 'anomaly' %}selected{% endif %}>Anomalia</option>
+      <option value="sensor_online" {% if filter_type == 'sensor_online' %}selected{% endif %}>Czujnik znów online</option>
+      <option value="anomaly" {% if filter_type == 'anomaly' %}selected{% endif %}>Inna anomalia</option>
     </select>
   </div>
 
@@ -300,7 +336,7 @@
     <select class="filter-select" onchange="applyFilters('status', this.value)">
       <option value="">Wszystkie</option>
       <option value="unread" {% if filter_status == 'unread' %}selected{% endif %}>Nieprzeczytane</option>
-      <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Aktywne</option>
+      <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Aktywne (nierozwiązane)</option>
       <option value="resolved" {% if filter_status == 'resolved' %}selected{% endif %}>Rozwiązane</option>
     </select>
   </div>
@@ -340,7 +376,7 @@
 
     <p class="alert-message">{{ alert.message }}</p>
 
-    {% if alert.value and alert.threshold %}
+    {% if alert.value is not None and alert.threshold is not None %}
     <div class="alert-value">
       <div class="value-box">
         <label>Wartość</label>
@@ -371,6 +407,25 @@
         <i class="far fa-clock"></i>
         {{ alert.created_at|date:"Y-m-d H:i:s" }}
       </div>
+    </div>
+
+    <div class="alert-actions">
+      {% if not alert.is_read %}
+      <form method="post" action="{% url 'alert_action' alert.id 'read' %}">
+        {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn-alert"><i class="fas fa-eye"></i> Przeczytane</button>
+      </form>
+      {% endif %}
+      {% if not alert.is_resolved %}
+      <form method="post" action="{% url 'alert_action' alert.id 'resolve' %}">
+        {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn-alert success"><i class="fas fa-check-circle"></i> Rozwiązane</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'alert_action' alert.id 'delete' %}" onsubmit="return confirm('Usunąć ten alert?');">
+        {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn-alert danger"><i class="fas fa-trash"></i> Usuń</button>
+      </form>
     </div>
   </div>
   {% endfor %}

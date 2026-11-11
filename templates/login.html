@@ -341,7 +341,7 @@
       </form>
 
       <div class="forgot-password">
-        <a href="#">Zapomniałeś hasła?</a>
+        <span style="color: #94a3b8; font-size: 0.85rem;">Nie pamiętasz hasła? Skontaktuj się z administratorem systemu.</span>
       </div>
     </div>
 
@@ -350,7 +350,7 @@
       <form method="post" action="{% url 'register' %}">
         {% csrf_token %}
         
-        {% for field in form %}
+        {% for field in register_form %}
         <div class="form-group">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>
           {{ field }} {% if field.help_text %}

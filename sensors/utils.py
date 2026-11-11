@@ -173,48 +173,81 @@ def check_alerts(sensor, sensor_data):
     return alerts_created
 
 
+def _alert_recipient(house):
+    return house.alert_email or house.user.email
+
+
+def _user_settings(user):
+    from .models import UserSettings
+    settings_obj, _ = UserSettings.objects.get_or_create(user=user)
+    return settings_obj
+
+
+def _send_alert_message(user, email, alerts, subject):
+    """Wysyła jeden email z listą alertów i oznacza je jako wysłane."""
+    lines = [f"Witaj {user.username},", "", "Nowe alerty w systemie Energy Monitor:", ""]
+    for alert in alerts:
+        when = timezone.localtime(alert.created_at).strftime('%Y-%m-%d %H:%M')
+        lines.append(f"• [{when}] {alert.house.name} – {alert.get_severity_display()}: {alert.message}")
+        if alert.value is not None and alert.threshold is not None:
+            lines.append(f"  Wartość: {alert.value:.1f}, próg: {alert.threshold:.1f}")
+    lines.extend(["", "Szczegóły: https://energymonitor.fun/dashboard/alerts/", "", "---", "Energy Monitor"])
+    try:
+        send_mail(subject, "\n".join(lines), settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
+        if getattr(settings, 'EMAIL_HOST', ''):
+            # bez serwera SMTP wiadomość trafia tylko do logu – nie oznaczamy jej jako wysłanej
+            Alert.objects.filter(id__in=[a.id for a in alerts]).update(email_sent=True)
+        return True
+    except Exception as e:
+        logger.error(f"Błąd wysyłania emaila do {email}: {e}")
+        return False
+
+
 def send_alert_email(alerts):
     """
-    Wysyła email z alertami
+    Wysyła email z alertami od razu – tylko gdy użytkownik ma włączone
+    powiadomienia email z częstotliwością "natychmiast". Przy częstotliwości
+    godzinowej lub dziennej alerty czekają na podsumowanie (send_alert_digests).
     """
     if not alerts:
         return
-
     house = alerts[0].house
-    email = house.alert_email or house.user.email
-
+    user_settings = _user_settings(house.user)
+    if not user_settings.email_alerts or user_settings.alert_frequency != 'immediate':
+        return
+    email = _alert_recipient(house)
     if not email:
         return
+    _send_alert_message(house.user, email, alerts, f"Alerty – {house.name}")
 
-    subject = f"⚠️ Alerty - {house.name}"
-    message_lines = [
-        f"Witaj {house.user.username},", "",
-        f"Mamy nowe alerty dla domu '{house.name}':", ""
-    ]
 
-    for alert in alerts:
-        message_lines.append(f"• {alert.get_severity_display()}: {alert.message}")
-        if alert.value and alert.threshold:
-            message_lines.append(f"  Wartość: {alert.value:.1f}, Próg: {alert.threshold:.1f}")
-        message_lines.append("")
-
-    message_lines.extend([
-        "Zaloguj się do systemu aby zobaczyć szczegóły.", "",
-        "---", "Energy Monitor System"
-    ])
-    message = "\n".join(message_lines)
-
-    try:
-        send_mail(
-            subject, message,
-            settings.DEFAULT_FROM_EMAIL, [email],
-            fail_silently=False,
-        )
-        for alert in alerts:
-            alert.email_sent = True
-            alert.save(update_fields=['email_sent'])
-    except Exception as e:
-        logger.error(f"Błąd wysyłania emaila: {e}")
+def send_alert_digests():
+    """
+    Wysyła zbiorcze podsumowania alertów dla użytkowników z częstotliwością
+    "co godzinę" lub "raz dziennie". Podsumowanie wychodzi, gdy najstarszy
+    niewysłany alert czeka dłużej niż wybrany okres. Zwraca liczbę emaili.
+    """
+    from .models import UserSettings
+    if not getattr(settings, 'EMAIL_HOST', ''):
+        return 0  # brak skonfigurowanego serwera SMTP
+    sent = 0
+    now = timezone.now()
+    periods = {'hourly': timedelta(hours=1), 'daily': timedelta(days=1)}
+    for user_settings in UserSettings.objects.filter(email_alerts=True, alert_frequency__in=periods.keys()).select_related('user'):
+        pending = list(Alert.objects.filter(house__user=user_settings.user, email_sent=False)
+                       .select_related('house').order_by('created_at'))
+        if not pending or now - pending[0].created_at < periods[user_settings.alert_frequency]:
+            continue
+        by_email = {}
+        for alert in pending:
+            email = _alert_recipient(alert.house)
+            if email:
+                by_email.setdefault(email, []).append(alert)
+        label = 'godzinowe' if user_settings.alert_frequency == 'hourly' else 'dzienne'
+        for email, alerts in by_email.items():
+            if _send_alert_message(user_settings.user, email, alerts, f"Podsumowanie {label} alertów ({len(alerts)})"):
+                sent += 1
+    return sent
 
 
 def log_activity(user, action, model_name, object_id, description, request=None):

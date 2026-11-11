@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import timedelta
 from sensors.models import Sensor, Alert
+from sensors.utils import send_alert_email, send_alert_digests
 
 class Command(BaseCommand):
     help = 'Sprawdza sensory, które są offline i tworzy alerty'
@@ -42,35 +43,28 @@ class Command(BaseCommand):
                 
                 if not active_alert_exists:
                     # Utwórz nowy alert, bo czujnik właśnie przeszedł w stan offline
-                    Alert.objects.create(
+                    alert = Alert.objects.create(
                         house=sensor.house,
                         sensor=sensor,
                         alert_type='sensor_offline',
                         severity='critical',
                         message=f"Czujnik '{sensor.name}' jest offline! (Brak danych przez ponad {sensor.offline_threshold_seconds}s)"
                     )
+                    send_alert_email([alert])
                     self.stdout.write(self.style.WARNING(f"ALERT: Czujnik '{sensor.name}' jest OFFLINE."))
             
             else:
                 sensors_online += 1
                 # Czujnik jest online. Sprawdź, czy był wcześniej alert i go rozwiąż.
-                try:
-                    alert_to_resolve = Alert.objects.get(
-                        sensor=sensor,
-                        alert_type='sensor_offline',
-                        is_resolved=False
-                    )
-                    alert_to_resolve.is_resolved = True
-                    alert_to_resolve.is_read = True
-                    alert_to_resolve.save()
-                    
-                    # (Opcjonalnie) Stwórz alert "powrót do online", jeśli jest w utils
-                    # Na razie tylko rozwiązujemy stary problem
+                resolved = Alert.objects.filter(
+                    sensor=sensor,
+                    alert_type='sensor_offline',
+                    is_resolved=False
+                ).update(is_resolved=True, is_read=True)
+                if resolved:
                     self.stdout.write(self.style.SUCCESS(f"OK: Czujnik '{sensor.name}' wrócił ONLINE. Rozwiązano alert."))
-                except Alert.DoesNotExist:
-                    # Wszystko w porządku, nie było alertu
-                    pass
 
+        digests = send_alert_digests()
         self.stdout.write(self.style.SUCCESS(
-            f"Zakończono. Online: {sensors_online}, Offline: {sensors_offline}"
+            f"Zakończono. Online: {sensors_online}, Offline: {sensors_offline}, podsumowań email: {digests}"
         ))

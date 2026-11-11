@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load l10n %}
 
 {% block title %}Ustawienia - Energy Monitor{% endblock %}
 
@@ -16,7 +17,7 @@
 
   .settings-header h1 {
     font-size: 2rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -31,7 +32,7 @@
   }
 
   .section-title {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1.5rem;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
@@ -47,13 +48,13 @@
 
   .form-group label {
     display: block;
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-weight: 600;
     margin-bottom: 0.5rem;
   }
 
   .form-group .helper-text {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.85rem;
     margin-top: 0.25rem;
   }
@@ -61,10 +62,10 @@
   .form-control {
     width: 100%;
     padding: 0.75rem 1rem;
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid #334155;
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
     border-radius: 0.5rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1rem;
     transition: all 0.3s ease;
   }
@@ -95,7 +96,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #334155;
+    background-color: var(--bg-tertiary);
     transition: 0.4s;
     border-radius: 34px;
   }
@@ -158,7 +159,7 @@
 
   .theme-option {
     padding: 1.5rem;
-    border: 2px solid #334155;
+    border: 2px solid var(--border);
     border-radius: 0.75rem;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -182,15 +183,15 @@
   }
 
   .theme-option.dark i {
-    color: #1e293b;
+    color: #6366f1;
   }
 
   .theme-option.light i {
-    color: #f1f5f9;
+    color: #f59e0b;
   }
 
   .theme-option .theme-name {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-weight: 600;
   }
 
@@ -198,7 +199,7 @@
     width: 100%;
     height: 8px;
     border-radius: 5px;
-    background: #334155;
+    background: var(--bg-tertiary);
     outline: none;
     -webkit-appearance: none;
   }
@@ -253,25 +254,25 @@
       <div class="form-group">
         <label>Motyw</label>
         <div class="theme-selector">
-          <div class="theme-option dark {% if user_settings.theme == 'dark' %}active{% endif %}" onclick="selectTheme('dark')">
+          <div class="theme-option dark {% if user_settings.theme == 'dark' %}active{% endif %}" onclick="selectTheme('dark', this)">
             <i class="fas fa-moon"></i>
             <div class="theme-name">Ciemny</div>
             <input type="radio" name="theme" value="dark" {% if user_settings.theme == 'dark' %}checked{% endif %} style="display: none;">
           </div>
-          <div class="theme-option light {% if user_settings.theme == 'light' %}active{% endif %}" onclick="selectTheme('light')">
+          <div class="theme-option light {% if user_settings.theme == 'light' %}active{% endif %}" onclick="selectTheme('light', this)">
             <i class="fas fa-sun"></i>
             <div class="theme-name">Jasny</div>
             <input type="radio" name="theme" value="light" {% if user_settings.theme == 'light' %}checked{% endif %} style="display: none;">
           </div>
         </div>
-        <p class="helper-text">Wybierz preferowany motyw interfejsu (obecnie tylko ciemny dostępny)</p>
+        <p class="helper-text">Motyw można też przełączyć ikoną słońca / księżyca w górnym menu</p>
       </div>
 
       <div class="form-group">
-        <label>Odświeżanie live widget ({{ user_settings.live_refresh_interval }}s)</label>
+        <label>Odświeżanie strony czujnika</label>
         <input type="range" name="live_refresh_interval" min="1" max="60" value="{{ user_settings.live_refresh_interval }}" class="range-slider" oninput="updateRangeValue(this)">
         <span class="range-value" id="rangeValue">{{ user_settings.live_refresh_interval }}s</span>
-        <p class="helper-text">Co ile sekund aktualizować dane w widoku na żywo (1-60s)</p>
+        <p class="helper-text">Co ile sekund odświeżać bieżące wartości na stronie szczegółów czujnika (1-60 s)</p>
       </div>
     </div>
 
@@ -286,7 +287,7 @@
         <div class="toggle-group">
           <div class="toggle-label">
             <label>Alerty email</label>
-            <p class="helper-text">Otrzymuj powiadomienia email o przekroczeniach progów</p>
+            <p class="helper-text">Otrzymuj powiadomienia email o alertach (adres z profilu lub ustawiony dla domu)</p>
           </div>
           <label class="toggle-switch">
             <input type="checkbox" name="email_alerts" {% if user_settings.email_alerts %}checked{% endif %}>
@@ -302,7 +303,7 @@
           <option value="hourly" {% if user_settings.alert_frequency == 'hourly' %}selected{% endif %}>Co godzinę</option>
           <option value="daily" {% if user_settings.alert_frequency == 'daily' %}selected{% endif %}>Raz dziennie</option>
         </select>
-        <p class="helper-text">Jak często chcesz otrzymywać powiadomienia email</p>
+        <p class="helper-text">„Natychmiast” – osobny email przy każdym alercie; „Co godzinę” / „Raz dziennie” – zbiorcze podsumowanie</p>
       </div>
     </div>
 
@@ -328,8 +329,8 @@
 
       <div class="form-group">
         <label>Cel miesięczny (kWh)</label>
-        <input type="number" name="monthly_goal_kwh" value="{{ user_settings.monthly_goal_kwh|default:'' }}" step="0.1" class="form-control" placeholder="np. 500">
-        <p class="helper-text">Ustaw cel zużycia energii na miesiąc. Zostaw puste aby wyłączyć.</p>
+        <input type="number" name="monthly_goal_kwh" value="{% if user_settings.monthly_goal_kwh %}{{ user_settings.monthly_goal_kwh|unlocalize }}{% endif %}" step="0.1" class="form-control" placeholder="np. 500">
+        <p class="helper-text">Cel zużycia na miesiąc (suma wszystkich domów) – postęp widać na dashboardzie. Zostaw puste, aby wyłączyć.</p>
       </div>
     </div>
 
@@ -341,12 +342,14 @@
 </div>
 
 <script>
-  function selectTheme(theme) {
+  function selectTheme(theme, el) {
     document.querySelectorAll('.theme-option').forEach(opt => {
       opt.classList.remove('active');
     });
-    event.currentTarget.classList.add('active');
+    el.classList.add('active');
     document.querySelector(`input[name="theme"][value="${theme}"]`).checked = true;
+    // podgląd od razu, zapis po kliknięciu "Zapisz ustawienia"
+    document.documentElement.setAttribute('data-theme', theme);
   }
 
   function updateRangeValue(input) {

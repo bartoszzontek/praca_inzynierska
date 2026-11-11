@@ -80,3 +80,11 @@ class AlertForm(forms.ModelForm):
         for field_name, field in self.fields.items():
             if not isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs['class'] = 'form-control'
+
+    def clean(self):
+        cleaned = super().clean()
+        house = cleaned.get('house')
+        sensor = cleaned.get('sensor')
+        if house and sensor and sensor.house_id != house.id:
+            self.add_error('sensor', 'Wybrany czujnik nie należy do wybranego domu.')
+        return cleaned

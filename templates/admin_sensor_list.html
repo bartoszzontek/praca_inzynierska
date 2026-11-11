@@ -12,7 +12,7 @@
     }
     .sensor-list-header h1 {
         font-size: 2rem;
-        color: #f1f5f9;
+        color: var(--text-primary);
         display: flex;
         align-items: center;
         gap: 1rem;
@@ -25,14 +25,14 @@
     }
     .panel-header {
         padding: 1.5rem;
-        background: rgba(15, 23, 42, 0.6);
+        background: var(--surface-inset);
         border-bottom: 1px solid var(--border);
         display: flex;
         justify-content: space-between;
     }
     .panel-header h2 {
         font-size: 1.25rem;
-        color: #f1f5f9;
+        color: var(--text-primary);
     }
     .sensor-table {
         width: 100%;
@@ -41,15 +41,15 @@
     .sensor-table th, .sensor-table td {
         padding: 1rem;
         text-align: left;
-        border-bottom: 1px solid #334155;
+        border-bottom: 1px solid var(--border);
     }
     .sensor-table th {
-        color: #94a3b8;
+        color: var(--text-secondary);
         font-size: 0.85rem;
         text-transform: uppercase;
     }
     .sensor-table td {
-        color: #f1f5f9;
+        color: var(--text-primary);
     }
     .sensor-table tbody tr:hover {
         background: rgba(59, 130, 246, 0.05);
@@ -98,7 +98,7 @@
 <div class="panel">
     <div class="panel-header">
         <h2>Aktywne Czujniki w Systemie</h2>
-        <a href="/admin/sensors/sensor/" class="btn-edit" style="background: var(--bg-tertiary);">
+        <a href="/admin/sensors/sensor/" class="btn-edit" style="background: var(--bg-tertiary); color: var(--text-primary);">
             <i class="fas fa-cog"></i> Pełna Edycja (Django Admin)
         </a>
     </div>
@@ -146,7 +146,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" style="text-align: center; color: #94a3b8; padding: 2rem;">
+                <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
                     Brak czujników w systemie.
                 </td>
             </tr>

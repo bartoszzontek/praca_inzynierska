@@ -53,15 +53,15 @@ def prepare():
         bot.save()
     token, _ = Token.objects.get_or_create(user=bot)
 
-    house, _ = House.objects.get_or_create(
-        user=owner, name='Dom (symulacja)',
-        defaults={'address': 'dane testowe z symulatora', 'price_per_kwh': 1.10},
-    )
-    Sensor.objects.get_or_create(
-        sensor_id=SENSOR_ID,
-        defaults={'house': house, 'name': 'Symulator - obwód gniazd', 'location': 'Kuchnia',
-                  'description': 'Czujnik wirtualny generujący dane testowe'},
-    )
+    if not Sensor.objects.filter(sensor_id=SENSOR_ID).exists():
+        house, _ = House.objects.get_or_create(
+            user=owner, name='Dom (symulacja)',
+            defaults={'address': 'dane testowe z symulatora', 'price_per_kwh': 1.10},
+        )
+        Sensor.objects.create(
+            sensor_id=SENSOR_ID, house=house, name='Symulator - obwód gniazd', location='Kuchnia',
+            description='Czujnik wirtualny generujący dane testowe',
+        )
     log(f'Gotowe: właściciel={owner.username}, czujnik={SENSOR_ID}, adres={URL}')
     return token.key
 

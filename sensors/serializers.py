@@ -91,7 +91,7 @@ class HouseSerializer(serializers.ModelSerializer):
 class SensorDataSerializer(serializers.ModelSerializer):
     """Serializer dla modelu SensorData"""
     timestamp = serializers.DateTimeField(
-        format="%Y-%m-%dT%H:%M:%S",
+        format="%Y-%m-%dT%H:%M:%SZ",  # UTC z oznaczeniem strefy – poprawny czas w przeglądarce
         default_timezone=timezone.utc,
         read_only=True
     )

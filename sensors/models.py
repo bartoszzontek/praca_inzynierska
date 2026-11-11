@@ -267,6 +267,7 @@ class ActivityLog(models.Model):
         ('delete', 'Usunięto'),
         ('assign', 'Przypisano'),
         ('alert', 'Alert'),
+        ('login', 'Logowanie'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='activity_logs')

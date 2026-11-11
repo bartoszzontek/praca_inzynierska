@@ -6,6 +6,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.contrib.auth.views import LoginView, LogoutView
 from rest_framework.authtoken import views as drf_views
 from sensors.views import register, home_view
+from sensors.forms import CustomUserCreationForm
 
 urlpatterns = [
     # 1. STRONA GŁÓWNA - energy.zipit.pl (Landing Page)
@@ -15,7 +16,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # 3. AUTENTYKACJA
-    path('login/', LoginView.as_view(template_name='login.html'), name='login'),
+    path('login/', LoginView.as_view(template_name='login.html', redirect_authenticated_user=True,
+                                     extra_context={'register_form': CustomUserCreationForm()}), name='login'),
     path('logout/', LogoutView.as_view(next_page='home'), name='logout'),
     path('register/', register, name='register'),
     path('api-token-auth/', drf_views.obtain_auth_token, name='api-token-auth'),

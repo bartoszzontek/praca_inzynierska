@@ -8,7 +8,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
     text-decoration: none;
     margin-bottom: 1.5rem;
     padding: 0.5rem 1rem;
@@ -16,7 +16,7 @@
     transition: all 0.3s ease;
   }
   .back-button:hover {
-    color: #f1f5f9;
+    color: var(--text-primary);
     background: var(--bg-tertiary);
   }
 
@@ -41,11 +41,11 @@
   }
   .sensor-title h1 {
     font-size: 2rem;
-    color: #f1f5f9;
+    color: var(--text-primary);
   }
   .sensor-title h1 small {
     font-size: 1rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
     display: block;
     font-weight: 400;
   }
@@ -99,8 +99,8 @@
   }
 
   .stat-card {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border: 1px solid #334155;
+    background: var(--card-gradient);
+    border: 1px solid var(--border);
     border-radius: 1rem;
     padding: 1.5rem;
     transition: all 0.3s ease;
@@ -108,11 +108,11 @@
   }
   .stat-card.secondary {
     background: var(--bg-secondary);
-    border-bottom-color: #64748b;
+    border-bottom-color: var(--text-muted);
   }
   
   .stat-card h3 {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -124,16 +124,16 @@
   .stat-value {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--text-primary);
     line-height: 1;
   }
   .stat-unit {
     font-size: 1rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
     margin-left: 0.5rem;
   }
   .stat-subtext {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.85rem;
     margin-top: 0.5rem;
     height: 1.2em; /* Rezerwuje miejsce */
@@ -148,11 +148,11 @@
   }
   .table-header {
     padding: 1.5rem;
-    background: rgba(15, 23, 42, 0.6);
+    background: var(--surface-inset);
     border-bottom: 1px solid var(--border);
   }
   .table-header h2 {
-    color: #f1f5f9;
+    color: var(--text-primary);
     font-size: 1.25rem;
     display: flex;
     align-items: center;
@@ -163,20 +163,20 @@
     border-collapse: collapse;
   }
   thead {
-    background: rgba(15, 23, 42, 0.4);
+    background: var(--surface-inset-soft);
   }
   th {
     padding: 1rem;
     text-align: left;
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-weight: 600;
     font-size: 0.85rem;
     text-transform: uppercase;
   }
   td {
     padding: 1rem;
-    color: #f1f5f9;
-    border-top: 1px solid #334155;
+    color: var(--text-primary);
+    border-top: 1px solid var(--border);
   }
   tbody tr:hover {
     background: rgba(59, 130, 246, 0.05);
@@ -208,40 +208,42 @@
   </div>
 </div>
 
+{% with last=last_10_readings.0 %}
 <div class="stats-grid">
   <div class="stat-card">
-    <h3><i class="fas fa-bolt"></i> Średnia Moc</h3>
+    <h3><i class="fas fa-bolt"></i> Moc</h3>
     <div>
-      <span class="stat-value">{{ avg_stats.power|floatformat:0|default:"---" }}</span>
+      <span class="stat-value" id="live-power">{% if last %}{{ last.power|floatformat:0 }}{% else %}---{% endif %}</span>
       <span class="stat-unit">W</span>
     </div>
-    <div class="stat-subtext">Z ostatnich 5 pomiarów</div>
+    <div class="stat-subtext" id="live-cost">{% if last %}ok. {{ cost_per_hour|floatformat:2 }} PLN/h{% else %}brak danych{% endif %}</div>
   </div>
   <div class="stat-card">
-    <h3><i class="fas fa-plug"></i> Średnie Napięcie</h3>
+    <h3><i class="fas fa-plug"></i> Napięcie</h3>
     <div>
-      <span class="stat-value">{{ avg_stats.voltage|floatformat:1|default:"---" }}</span>
+      <span class="stat-value" id="live-voltage">{% if last %}{{ last.voltage|floatformat:1 }}{% else %}---{% endif %}</span>
       <span class="stat-unit">V</span>
     </div>
-    <div class="stat-subtext">Z ostatnich 5 pomiarów</div>
+    <div class="stat-subtext">średnio z 5 pomiarów: {{ avg_stats.voltage|floatformat:1|default:"---" }} V</div>
   </div>
   <div class="stat-card">
-    <h3><i class="fas fa-wave-square"></i> Średni Prąd</h3>
+    <h3><i class="fas fa-wave-square"></i> Prąd</h3>
     <div>
-      <span class="stat-value">{{ avg_stats.current|floatformat:2|default:"---" }}</span>
+      <span class="stat-value" id="live-current">{% if last %}{{ last.current|floatformat:2 }}{% else %}---{% endif %}</span>
       <span class="stat-unit">A</span>
     </div>
-    <div class="stat-subtext">Z ostatnich 5 pomiarów</div>
+    <div class="stat-subtext">średnio z 5 pomiarów: {{ avg_stats.current|floatformat:2|default:"---" }} A</div>
   </div>
   <div class="stat-card">
-    <h3><i class="fas fa-tachometer-alt"></i> Średnie PF</h3>
+    <h3><i class="fas fa-tachometer-alt"></i> Współczynnik mocy</h3>
     <div>
-      <span class="stat-value">{{ avg_stats.pf|floatformat:2|default:"---" }}</span>
+      <span class="stat-value" id="live-pf">{% if last %}{{ last.pf|floatformat:2 }}{% else %}---{% endif %}</span>
       <span class="stat-unit"></span>
     </div>
-    <div class="stat-subtext">Z ostatnich 5 pomiarów</div>
+    <div class="stat-subtext" id="live-time">{% if last %}ostatni pomiar: {{ last.timestamp|date:"H:i:s" }}{% else %}brak pomiarów{% endif %} · odświeżanie co {{ refresh_interval }} s</div>
   </div>
 </div>
+{% endwith %}
 
 <div class="stats-grid">
   <div class="stat-card secondary">
@@ -274,6 +276,16 @@
   </div>
 </div>
 
+<div class="data-table" style="margin-bottom: 2rem;">
+  <div class="table-header">
+    <h2><i class="fas fa-chart-area"></i> Moc w ostatnich 24 godzinach</h2>
+  </div>
+  <div style="padding: 1rem 1.5rem 1.5rem; height: 320px; position: relative;">
+    <canvas id="powerChart"></canvas>
+    <p id="chart-empty" style="display: none; text-align: center; color: var(--text-secondary); padding-top: 6rem;">Brak pomiarów z ostatnich 24 godzin.</p>
+  </div>
+</div>
+
 <div class="data-table">
   <div class="table-header">
     <h2><i class="fas fa-table"></i> Ostatnie 10 pomiarów</h2>
@@ -299,11 +311,103 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="5" style="text-align: center; color: #94a3b8;">Brak danych historycznych.</td>
+        <td colspan="5" style="text-align: center; color: var(--text-secondary);">Brak danych historycznych.</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const sensorId = {{ sensor.id }};
+  const refreshMs = {{ refresh_interval }} * 1000;
+  const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const fmtTime = (d) => d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+  const pad = (n) => String(n).padStart(2, '0');
+  const fmtFull = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const num = (v, digits) => Number(v ?? 0).toLocaleString('pl-PL', { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: false });
+  let chart = null;
+  let lastTs = null;
+
+  function initChart(rows) {
+    const canvas = document.getElementById('powerChart');
+    if (!rows.length) {
+      canvas.style.display = 'none';
+      document.getElementById('chart-empty').style.display = 'block';
+      return;
+    }
+    // co najwyżej ok. 600 punktów na wykresie – czytelność i wydajność
+    const step = Math.max(1, Math.ceil(rows.length / 600));
+    const pts = rows.filter((_, i) => i % step === 0 || i === rows.length - 1);
+    chart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: pts.map(r => fmtTime(new Date(r.timestamp))),
+        datasets: [{
+          label: 'Moc [W]',
+          data: pts.map(r => r.power),
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',
+          fill: true, tension: 0.25, pointRadius: 0, borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: cssVar('--text-secondary'), maxTicksLimit: 12 }, grid: { color: cssVar('--chart-grid') } },
+          y: { beginAtZero: true, ticks: { color: cssVar('--text-secondary') }, grid: { color: cssVar('--chart-grid') },
+               title: { display: true, text: 'W', color: cssVar('--text-secondary') } }
+        }
+      }
+    });
+  }
+
+  function addTableRow(d) {
+    const tbody = document.querySelector('#dataTable tbody');
+    const empty = tbody.querySelector('td[colspan]');
+    if (empty) empty.parentElement.remove();
+    const tr = document.createElement('tr');
+    const cells = [fmtFull(new Date(d.timestamp)), num(d.voltage, 1), num(d.current, 2), num(d.power, 1), num(d.pf, 2)];
+    cells.forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i) td.className = 'value-cell'; tr.appendChild(td); });
+    tbody.prepend(tr);
+    while (tbody.rows.length > 10) tbody.deleteRow(-1);
+  }
+
+  async function refresh() {
+    try {
+      const r = await fetch(`/dashboard/user/sensor/${sensorId}/live/`, { credentials: 'same-origin' });
+      if (!r.ok) return;
+      const d = await r.json();
+      const ind = document.querySelector('.live-indicator');
+      ind.classList.toggle('online', d.is_online);
+      ind.classList.toggle('offline', !d.is_online);
+      ind.querySelector('.live-text').textContent = d.is_online ? 'ONLINE' : 'OFFLINE';
+      if (!d.timestamp) return;
+      document.getElementById('live-power').textContent = Math.round(d.power ?? 0);
+      document.getElementById('live-voltage').textContent = num(d.voltage, 1);
+      document.getElementById('live-current').textContent = num(d.current, 2);
+      document.getElementById('live-pf').textContent = num(d.pf, 2);
+      document.getElementById('live-cost').textContent = `ok. ${num(d.cost_per_hour, 2)} PLN/h`;
+      const t = new Date(d.timestamp);
+      document.getElementById('live-time').textContent = `ostatni pomiar: ${t.toLocaleTimeString('pl-PL')} · odświeżanie co ${refreshMs / 1000} s`;
+      if (lastTs !== d.timestamp) {
+        if (lastTs !== null) {
+          addTableRow(d);
+          if (chart) { chart.data.labels.push(fmtTime(t)); chart.data.datasets[0].data.push(d.power); chart.update('none'); }
+        }
+        lastTs = d.timestamp;
+      }
+    } catch (e) { /* chwilowy brak połączenia – spróbujemy przy następnym odświeżeniu */ }
+  }
+
+  fetch(`/dashboard/user/sensor/${sensorId}/data/`, { credentials: 'same-origin' })
+    .then(r => r.ok ? r.json() : [])
+    .then(rows => { initChart(rows); refresh(); setInterval(refresh, refreshMs); })
+    .catch(() => { initChart([]); setInterval(refresh, refreshMs); });
+})();
+</script>
 {% endblock %}
