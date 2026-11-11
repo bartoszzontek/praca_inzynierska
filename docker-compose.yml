@@ -71,6 +71,20 @@ services:
       - nginx
     restart: unless-stopped
 
+  # Symulator pomiarów do testów (uruchamiany ręcznie: docker compose --profile demo up -d simulator)
+  simulator:
+    image: energy-monitor-web
+    pull_policy: never
+    container_name: energy_simulator
+    profiles: ["demo"]
+    command: python deploy/symulator.py
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      - web
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   static_data:
