@@ -13,6 +13,7 @@ import json
 import math
 import os
 import random
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -20,6 +21,7 @@ from datetime import datetime, timezone
 
 import django
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # katalog projektu
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
 django.setup()
 
