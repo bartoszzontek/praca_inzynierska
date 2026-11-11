@@ -23,7 +23,7 @@ class UserSettingsSerializer(serializers.ModelSerializer):
         model = UserSettings
         fields = [
             'id', 'theme', 'email_alerts', 'alert_frequency',
-            'live_refresh_interval', 'show_predictions', 'monthly_goal_kwh'
+            'live_refresh_interval', 'monthly_goal_kwh'
         ]
 
 # --- NOWY SERIALIZER ---

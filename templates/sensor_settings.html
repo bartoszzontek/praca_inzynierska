@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Ustawienia – {{ sensor.name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <a href="{% url 'sensor_detail' sensor.id %}" class="breadcrumb"><i class="fas fa-arrow-left"></i> {{ sensor.name }}</a>
+    <h1>Ustawienia czujnika</h1>
+    <p>{{ sensor.house.name }} · ID {{ sensor.sensor_id|default:"—" }}</p>
+  </div>
+</div>
+
+<div class="grid grid-main">
+  <form method="post" class="card">
+    {% csrf_token %}
+    <div class="card-head"><h2><i class="fas fa-pen"></i> Opis i progi alertów</h2></div>
+    <div class="card-body">
+      {% if form.non_field_errors %}<ul class="errorlist" style="margin-bottom:12px;">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      <div class="form-grid">
+        {% include '_field.html' with field=form.name %}
+        {% include '_field.html' with field=form.location %}
+        {% include '_field.html' with field=form.description full=True %}
+        {% include '_field.html' with field=form.icon %}
+        {% include '_field.html' with field=form.color %}
+
+        <div class="fieldset-title">Progi alertów</div>
+        <p class="help full" style="margin-top:-8px;">Pozostaw pole puste, aby wyłączyć dany alert. Alert powstaje, gdy pomiar przekroczy próg.</p>
+        {% include '_field.html' with field=form.power_threshold %}
+        {% include '_field.html' with field=form.current_max_threshold %}
+        {% include '_field.html' with field=form.voltage_min_threshold %}
+        {% include '_field.html' with field=form.voltage_max_threshold %}
+        {% include '_field.html' with field=form.offline_threshold_seconds %}
+      </div>
+      <div class="form-actions">
+        <a href="{% url 'sensor_detail' sensor.id %}" class="btn">Anuluj</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Zapisz</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="card">
+    <div class="card-head"><h2><i class="fas fa-key"></i> Klucz API modułu</h2></div>
+    <div class="card-body">
+      <p class="muted small" style="margin-bottom:12px;">
+        Moduł pomiarowy wysyła pomiary z nagłówkiem <code>Authorization: Token &lt;klucz&gt;</code>.
+        Klucz pozwala zapisywać pomiary tylko tego czujnika.
+      </p>
+      <div class="token">
+        <code id="token" data-token="{{ sensor.api_token }}">••••••••••••••••••••••••••••••••••••••••</code>
+        <button type="button" class="btn btn-sm" id="show-token"><i class="fas fa-eye"></i></button>
+        <button type="button" class="btn btn-sm" id="copy-token" title="Kopiuj"><i class="fas fa-copy"></i></button>
+      </div>
+      <form method="post" style="margin-top:14px;" onsubmit="return confirm('Wygenerować nowy klucz? Moduł z dotychczasowym kluczem przestanie wysyłać pomiary.');">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="regenerate_token">
+        <button type="submit" class="btn btn-danger btn-block"><i class="fas fa-rotate"></i> Wygeneruj nowy klucz</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const tokenEl = document.getElementById('token');
+  document.getElementById('show-token').addEventListener('click', () => { tokenEl.textContent = tokenEl.dataset.token; });
+  document.getElementById('copy-token').addEventListener('click', async (e) => {
+    try { await navigator.clipboard.writeText(tokenEl.dataset.token); e.currentTarget.innerHTML = '<i class="fas fa-check"></i>'; } catch (err) {}
+  });
+</script>
+{% endblock %}

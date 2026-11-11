@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Ustawienia – {{ house.name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <a href="{% url 'house' house.id %}" class="breadcrumb"><i class="fas fa-arrow-left"></i> {{ house.name }}</a>
+    <h1>Ustawienia domu</h1>
+    <p>Cena energii, limit miesięczny i adres powiadomień</p>
+  </div>
+</div>
+
+<form method="post" class="card" style="max-width: 760px;">
+  {% csrf_token %}
+  <div class="card-body">
+    <div class="form-grid">
+      {% include '_field.html' with field=form.name %}
+      {% include '_field.html' with field=form.address %}
+      {% include '_field.html' with field=form.price_per_kwh %}
+      {% include '_field.html' with field=form.monthly_limit_kwh %}
+      {% include '_field.html' with field=form.alert_email full=True %}
+    </div>
+    <div class="form-actions">
+      <a href="{% url 'house' house.id %}" class="btn">Anuluj</a>
+      <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Zapisz</button>
+    </div>
+  </div>
+</form>
+{% endblock %}

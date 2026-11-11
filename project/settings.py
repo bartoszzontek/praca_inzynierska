@@ -119,8 +119,6 @@ REST_FRAMEWORK = {
     ),
 }
 
-# Klucz do podpisywania danych z czujników
-SENSOR_DATA_SECRET = os.environ.get('SENSOR_DATA_SECRET', 'klucz-do-podpisywania-danych-ZMIEN-NA-PRODUKCJI')
 
 # Ustawienia logowania
 LOGIN_REDIRECT_URL = '/dashboard/'

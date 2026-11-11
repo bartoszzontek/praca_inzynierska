@@ -3,6 +3,12 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from datetime import timedelta
+import secrets
+
+
+def generate_sensor_token():
+    """Losowy klucz API czujnika (40 znaków szesnastkowych)."""
+    return secrets.token_hex(20)
 
 
 class House(models.Model):
@@ -44,6 +50,13 @@ class Sensor(models.Model):
         blank=True,
         verbose_name="ID czujnika"
     )
+    api_token = models.CharField(
+        max_length=40,
+        unique=True,
+        default=generate_sensor_token,
+        verbose_name="Klucz API",
+        help_text="Klucz, którym moduł pomiarowy uwierzytelnia wysyłane pomiary"
+    )
     name = models.CharField(max_length=100, verbose_name="Nazwa")
     description = models.TextField(blank=True, verbose_name="Opis")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data dodania")
@@ -68,15 +81,14 @@ class Sensor(models.Model):
         help_text="Hex color, np. #3b82f6"
     )
 
-    # === POLA DLA REGUŁ ALERTÓW ===
+    # Progi alertów (puste pole = brak alertu danego typu)
     power_threshold = models.FloatField(
         null=True,
         blank=True,
         verbose_name="Próg mocy [W]",
         help_text="Alert gdy moc przekroczy tę wartość"
     )
-    
-    # NOWE POLE (Twoja prośba)
+
     current_max_threshold = models.FloatField(
         null=True,
         blank=True,
@@ -96,14 +108,12 @@ class Sensor(models.Model):
         verbose_name="Max. napięcie [V]",
         help_text="Alert gdy napięcie wzrośnie powyżej tej wartości"
     )
-    
-    # Zmieniam domyślny czas na 30 sekund, zgodnie z Twoją prośbą o "5 sekund"
+
     offline_threshold_seconds = models.PositiveIntegerField(
-        default=30, # Domyślnie 30 sekund
+        default=30,
         verbose_name="Próg offline [s]",
         help_text="Po ilu sekundach bez pomiaru uznać czujnik za offline (np. 30)"
     )
-    # === KONIEC PÓL REGUŁ ===
 
     class Meta:
         verbose_name = "Czujnik"
@@ -169,7 +179,7 @@ class Alert(models.Model):
     """Model alertów/powiadomień"""
     ALERT_TYPES = [
         ('power_high', 'Przekroczono próg mocy'),
-        ('current_high', 'Przekroczono próg prądu'), # NOWY TYP
+        ('current_high', 'Przekroczono próg prądu'),
         ('voltage_anomaly', 'Anomalia napięcia'), 
         ('monthly_limit', 'Przekroczono limit miesięczny'),
         ('sensor_offline', 'Czujnik offline'),
@@ -241,7 +251,6 @@ class UserSettings(models.Model):
         verbose_name="Odświeżanie [s]",
         help_text="Co ile sekund odświeżać widget live (1-60)"
     )
-    show_predictions = models.BooleanField(default=True, verbose_name="Pokazuj predykcje")
     monthly_goal_kwh = models.FloatField(
         null=True,
         blank=True,

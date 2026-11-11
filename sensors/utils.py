@@ -1,5 +1,3 @@
-import hmac
-import hashlib
 import math
 from datetime import timedelta
 from calendar import monthrange
@@ -7,24 +5,10 @@ from calendar import monthrange
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
-from .models import Alert, ActivityLog, SensorData, Sensor # Importuj Sensor
+from .models import Alert, ActivityLog, SensorData, Sensor
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-def sign_data(value, timestamp):
-    """Podpisuje dane HMAC"""
-    message = f"{value}-{timestamp}".encode('utf-8')
-    secret = settings.SENSOR_DATA_SECRET.encode('utf-8')
-    signature = hmac.new(secret, message, digestmod=hashlib.sha256).hexdigest()
-    return signature
-
-
-def verify_signature(value, timestamp, signature):
-    """Weryfikuje podpis HMAC"""
-    expected = sign_data(value, timestamp)
-    return hmac.compare_digest(expected, signature)
 
 
 def calculate_reactive_power(power, pf):
@@ -149,8 +133,8 @@ def check_alerts(sensor, sensor_data):
 
     # 5. Alert limitu miesięcznego
     if sensor.house.monthly_limit_kwh:
-        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        
+        start_of_month = timezone.localtime(now).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
         if not Alert.objects.filter(
             house=sensor.house,
             alert_type='monthly_limit',
@@ -272,45 +256,65 @@ def log_activity(user, action, model_name, object_id, description, request=None)
     )
 
 
+def _sensor_energy_wh(sensor, start_time, end_time, by_day=False):
+    """
+    Całkuje moc czujnika w czasie (metoda prostokątów): energia przyrasta o P·Δt
+    między kolejnymi pomiarami. Przerwy dłuższe niż próg offline + 60 s są pomijane,
+    żeby brak danych nie był liczony jako ciągły pobór mocy.
+    Zwraca energię w Wh albo słownik {data: Wh}, gdy by_day=True.
+    """
+    max_gap = sensor.offline_threshold_seconds + 60
+    rows = (SensorData.objects
+            .filter(sensor=sensor, timestamp__gte=start_time, timestamp__lt=end_time)
+            .order_by('timestamp')
+            .values_list('timestamp', 'power'))
+    total = 0.0
+    days = {}
+    prev_ts = None
+    for ts, power in rows.iterator(chunk_size=5000):
+        if prev_ts is not None:
+            dt = (ts - prev_ts).total_seconds()
+            if 0 < dt < max_gap:
+                wh = (power or 0) * dt / 3600.0
+                total += wh
+                if by_day:
+                    day = timezone.localtime(ts).date()
+                    days[day] = days.get(day, 0.0) + wh
+        prev_ts = ts
+    return days if by_day else total
+
+
 def calculate_energy_for_period(house, start_time, end_time, sensor_id=None):
     """
-    Oblicza całkowitą energię (kWh) dla domu w danym okresie.
+    Oblicza całkowitą energię (kWh) dla domu (albo jednego jego czujnika) w danym okresie.
     """
-    total_kwh = 0
-    
-    if sensor_id:
-        sensors_query = house.sensors.filter(id=sensor_id)
-    else:
-        sensors_query = house.sensors.all()
+    sensors_query = house.sensors.filter(id=sensor_id) if sensor_id else house.sensors.all()
+    return sum(_sensor_energy_wh(sensor, start_time, end_time) for sensor in sensors_query) / 1000.0
 
-    for sensor in sensors_query:
-        data_list = list(
-            SensorData.objects.filter(
-                sensor=sensor,
-                timestamp__gte=start_time,
-                timestamp__lt=end_time
-            ).order_by('timestamp')
-        )
 
-        sensor_wh = 0
-        if len(data_list) > 1:
-            for i in range(1, len(data_list)):
-                dt_seconds = (data_list[i].timestamp - data_list[i - 1].timestamp).total_seconds()
-                
-                if dt_seconds > 0 and dt_seconds < (sensor.offline_threshold_seconds + 60):
-                    power = float(data_list[i].power) if data_list[i].power else 0
-                    sensor_wh += power * (dt_seconds / 3600.0)
-        
-        total_kwh += sensor_wh / 1000.0
-
-    return total_kwh
+def energy_by_day(sensors, days=14):
+    """
+    Dzienne zużycie energii [kWh] z ostatnich `days` dni (łącznie dla podanych czujników).
+    Zwraca listę słowników {'date', 'kwh'} od najstarszego dnia.
+    """
+    now = timezone.localtime()
+    start = (now - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    totals = {}
+    for sensor in sensors:
+        for day, wh in _sensor_energy_wh(sensor, start, now, by_day=True).items():
+            totals[day] = totals.get(day, 0.0) + wh
+    result = []
+    for i in range(days):
+        day = (start + timedelta(days=i)).date()
+        result.append({'date': day, 'kwh': round(totals.get(day, 0.0) / 1000.0, 3)})
+    return result
 
 
 def get_comparison_data(house, period='month'):
     """
     Porównuje zużycie energii między okresami
     """
-    now = timezone.now()
+    now = timezone.localtime()
 
     if period == 'day':
         current_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -348,7 +352,7 @@ def predict_monthly_cost(house):
     """
     Przewiduje koszt na koniec miesiąca
     """
-    now = timezone.now()
+    now = timezone.localtime()
     start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     days_in_month = monthrange(now.year, now.month)[1]
     

@@ -1,378 +1,210 @@
 {% extends 'base.html' %}
-
-{% block title %}{{ sensor.name }} - Podsumowanie{% endblock %}
-
-{% block extra_css %}
-<style>
-  .back-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-secondary);
-    text-decoration: none;
-    margin-bottom: 1.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    transition: all 0.3s ease;
-  }
-  .back-button:hover {
-    color: var(--text-primary);
-    background: var(--bg-tertiary);
-  }
-
-  .sensor-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    animation: fadeIn 0.6s ease-out;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .sensor-title {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  .sensor-title i {
-    font-size: 2.5rem;
-    color: {{ sensor.color|default:'#3b82f6' }};
-  }
-  .sensor-title h1 {
-    font-size: 2rem;
-    color: var(--text-primary);
-  }
-  .sensor-title h1 small {
-    font-size: 1rem;
-    color: var(--text-secondary);
-    display: block;
-    font-weight: 400;
-  }
-
-  /* --- WSKAŹNIK STATUSU --- */
-  .live-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1.25rem;
-    border-radius: 0.75rem;
-    transition: all 0.3s ease;
-  }
-  .live-indicator.online {
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-  }
-  .live-indicator.offline {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-  }
-  .live-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-  }
-  .live-indicator.online .live-dot {
-    background: #10b981;
-    animation: pulse-live 2s ease-in-out infinite;
-  }
-  .live-indicator.offline .live-dot {
-    background: #ef4444;
-  }
-  .live-text {
-    font-weight: 600;
-  }
-  .live-indicator.online .live-text { color: #10b981; }
-  .live-indicator.offline .live-text { color: #ef4444; }
-  
-  @keyframes pulse-live {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-  }
-
-  /* --- KAFLE (GRID) --- */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .stat-card {
-    background: var(--card-gradient);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-    border-bottom: 4px solid var(--accent);
-  }
-  .stat-card.secondary {
-    background: var(--bg-secondary);
-    border-bottom-color: var(--text-muted);
-  }
-  
-  .stat-card h3 {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-bottom: 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .stat-value {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1;
-  }
-  .stat-unit {
-    font-size: 1rem;
-    color: var(--text-secondary);
-    margin-left: 0.5rem;
-  }
-  .stat-subtext {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-    height: 1.2em; /* Rezerwuje miejsce */
-  }
-
-  /* --- TABELA OSTATNICH ODCZYTÓW --- */
-  .data-table {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
-    overflow: hidden;
-  }
-  .table-header {
-    padding: 1.5rem;
-    background: var(--surface-inset);
-    border-bottom: 1px solid var(--border);
-  }
-  .table-header h2 {
-    color: var(--text-primary);
-    font-size: 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  thead {
-    background: var(--surface-inset-soft);
-  }
-  th {
-    padding: 1rem;
-    text-align: left;
-    color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-  }
-  td {
-    padding: 1rem;
-    color: var(--text-primary);
-    border-top: 1px solid var(--border);
-  }
-  tbody tr:hover {
-    background: rgba(59, 130, 246, 0.05);
-  }
-  .value-cell {
-    font-family: 'Courier New', monospace;
-    font-weight: 600;
-  }
-</style>
-{% endblock %}
+{% block title %}{{ sensor.name }}{% endblock %}
 
 {% block content %}
-<a href="{% url 'dashboard' %}" class="back-button">
-  <i class="fas fa-arrow-left"></i>
-  Powrót do dashboardu
-</a>
-
-<div class="sensor-header">
-  <div class="sensor-title">
-    <i class="fas fa-{{ sensor.icon|default:'microchip' }}" style="color: {{ sensor.color|default:'#3b82f6' }};"></i>
-    <h1>
-      {{ sensor.name }}
-      <small>{{ sensor.location|default:"Brak lokalizacji" }}</small>
-    </h1>
+<div class="page-head">
+  <div style="display:flex; gap:14px; align-items:center;">
+    <span class="sensor-icon" style="width:48px; height:48px; font-size:1.2rem; color: {{ sensor.color }};"><i class="fas fa-{{ sensor.icon|default:'microchip' }}"></i></span>
+    <div>
+      <a href="{% url 'house' sensor.house.id %}" class="breadcrumb"><i class="fas fa-arrow-left"></i> {{ sensor.house.name }}</a>
+      <h1>{{ sensor.name }}</h1>
+      <p>{{ sensor.location|default:"Brak lokalizacji" }} · ID {{ sensor.sensor_id|default:"—" }}</p>
+    </div>
   </div>
-  <div class="live-indicator {% if sensor.is_online %}online{% else %}offline{% endif %}">
-    <div class="live-dot"></div>
-    <span class="live-text">{% if sensor.is_online %}ONLINE{% else %}OFFLINE{% endif %}</span>
+  <div class="head-actions">
+    <span id="live-status" class="badge {% if online %}badge-success{% else %}badge-danger{% endif %}"><span class="dot {% if online %}on{% else %}off{% endif %}"></span>{% if online %}online{% else %}offline{% endif %}</span>
+    <a href="{% url 'sensor_settings' sensor.id %}" class="btn btn-sm"><i class="fas fa-gear"></i> Ustawienia</a>
   </div>
 </div>
 
-{% with last=last_10_readings.0 %}
-<div class="stats-grid">
-  <div class="stat-card">
-    <h3><i class="fas fa-bolt"></i> Moc</h3>
-    <div>
-      <span class="stat-value" id="live-power">{% if last %}{{ last.power|floatformat:0 }}{% else %}---{% endif %}</span>
-      <span class="stat-unit">W</span>
-    </div>
-    <div class="stat-subtext" id="live-cost">{% if last %}ok. {{ cost_per_hour|floatformat:2 }} PLN/h{% else %}brak danych{% endif %}</div>
+<div class="grid grid-4">
+  <div class="card stat">
+    <div class="stat-label"><i class="fas fa-bolt"></i> Moc</div>
+    <div class="stat-value"><span id="live-power">{% if latest %}{{ latest.power|floatformat:0 }}{% else %}—{% endif %}</span><span class="unit">W</span></div>
+    <div class="stat-sub" id="live-cost">{% if latest %}ok. {{ cost_per_hour|floatformat:2 }} zł/h{% else %}brak pomiarów{% endif %}</div>
   </div>
-  <div class="stat-card">
-    <h3><i class="fas fa-plug"></i> Napięcie</h3>
-    <div>
-      <span class="stat-value" id="live-voltage">{% if last %}{{ last.voltage|floatformat:1 }}{% else %}---{% endif %}</span>
-      <span class="stat-unit">V</span>
-    </div>
-    <div class="stat-subtext">średnio z 5 pomiarów: {{ avg_stats.voltage|floatformat:1|default:"---" }} V</div>
+  <div class="card stat">
+    <div class="stat-label"><i class="fas fa-plug"></i> Napięcie</div>
+    <div class="stat-value"><span id="live-voltage">{% if latest %}{{ latest.voltage|floatformat:1 }}{% else %}—{% endif %}</span><span class="unit">V</span></div>
+    <div class="stat-sub" id="live-freq">{% if latest %}{{ latest.frequency|floatformat:2 }} Hz{% endif %}</div>
   </div>
-  <div class="stat-card">
-    <h3><i class="fas fa-wave-square"></i> Prąd</h3>
-    <div>
-      <span class="stat-value" id="live-current">{% if last %}{{ last.current|floatformat:2 }}{% else %}---{% endif %}</span>
-      <span class="stat-unit">A</span>
-    </div>
-    <div class="stat-subtext">średnio z 5 pomiarów: {{ avg_stats.current|floatformat:2|default:"---" }} A</div>
+  <div class="card stat">
+    <div class="stat-label"><i class="fas fa-wave-square"></i> Prąd</div>
+    <div class="stat-value"><span id="live-current">{% if latest %}{{ latest.current|floatformat:2 }}{% else %}—{% endif %}</span><span class="unit">A</span></div>
+    <div class="stat-sub">wartość skuteczna</div>
   </div>
-  <div class="stat-card">
-    <h3><i class="fas fa-tachometer-alt"></i> Współczynnik mocy</h3>
-    <div>
-      <span class="stat-value" id="live-pf">{% if last %}{{ last.pf|floatformat:2 }}{% else %}---{% endif %}</span>
-      <span class="stat-unit"></span>
-    </div>
-    <div class="stat-subtext" id="live-time">{% if last %}ostatni pomiar: {{ last.timestamp|date:"H:i:s" }}{% else %}brak pomiarów{% endif %} · odświeżanie co {{ refresh_interval }} s</div>
-  </div>
-</div>
-{% endwith %}
-
-<div class="stats-grid">
-  <div class="stat-card secondary">
-    <h3><i class="fas fa-calendar-day"></i> Zużycie dzisiaj</h3>
-    <div>
-      <span class="stat-value">{{ daily_kwh|floatformat:2 }}</span>
-      <span class="stat-unit">kWh</span>
-    </div>
-  </div>
-  <div class="stat-card secondary">
-    <h3><i class="fas fa-dollar-sign"></i> Koszt dzisiaj</h3>
-    <div>
-      <span class="stat-value">{{ daily_cost|floatformat:2 }}</span>
-      <span class="stat-unit">PLN</span>
-    </div>
-  </div>
-  <div class="stat-card secondary">
-    <h3><i class="fas fa-calendar-alt"></i> Zużycie w tym m-cu</h3>
-    <div>
-      <span class="stat-value">{{ monthly_kwh|floatformat:2 }}</span>
-      <span class="stat-unit">kWh</span>
-    </div>
-  </div>
-  <div class="stat-card secondary">
-    <h3><i class="fas fa-file-invoice-dollar"></i> Koszt w tym m-cu</h3>
-    <div>
-      <span class="stat-value">{{ monthly_cost|floatformat:2 }}</span>
-      <span class="stat-unit">PLN</span>
-    </div>
+  <div class="card stat">
+    <div class="stat-label"><i class="fas fa-gauge"></i> Współczynnik mocy</div>
+    <div class="stat-value"><span id="live-pf">{% if latest %}{{ latest.pf|floatformat:2 }}{% else %}—{% endif %}</span></div>
+    <div class="stat-sub" id="live-time">{% if latest %}pomiar {{ latest.timestamp|date:"H:i:s" }}{% endif %} · co {{ refresh_interval }} s</div>
   </div>
 </div>
 
-<div class="data-table" style="margin-bottom: 2rem;">
-  <div class="table-header">
-    <h2><i class="fas fa-chart-area"></i> Moc w ostatnich 24 godzinach</h2>
+<div class="grid grid-2 section">
+  <div class="card stat">
+    <div class="stat-label"><i class="fas fa-sun"></i> Dziś</div>
+    <div class="stat-value">{{ daily_kwh|floatformat:2 }}<span class="unit">kWh</span></div>
+    <div class="stat-sub">{{ daily_cost|floatformat:2 }} zł</div>
   </div>
-  <div style="padding: 1rem 1.5rem 1.5rem; height: 320px; position: relative;">
-    <canvas id="powerChart"></canvas>
-    <p id="chart-empty" style="display: none; text-align: center; color: var(--text-secondary); padding-top: 6rem;">Brak pomiarów z ostatnich 24 godzin.</p>
+  <div class="card stat">
+    <div class="stat-label"><i class="fas fa-calendar"></i> Ten miesiąc</div>
+    <div class="stat-value">{{ monthly_kwh|floatformat:2 }}<span class="unit">kWh</span></div>
+    <div class="stat-sub">{{ monthly_cost|floatformat:2 }} zł</div>
   </div>
 </div>
 
-<div class="data-table">
-  <div class="table-header">
-    <h2><i class="fas fa-table"></i> Ostatnie 10 pomiarów</h2>
+<div class="grid grid-main section">
+  <div class="stack">
+    <div class="card">
+      <div class="card-head">
+        <h2><i class="fas fa-chart-area"></i> <span id="chart-title">Moc</span></h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <div class="segmented" id="metric-switch">
+            <button type="button" data-metric="power" class="active">Moc</button>
+            <button type="button" data-metric="voltage">Napięcie</button>
+          </div>
+          <div class="segmented" id="range-switch">
+            <button type="button" data-range="24h" class="active">24 h</button>
+            <button type="button" data-range="7d">7 dni</button>
+            <button type="button" data-range="30d">30 dni</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart">
+        <canvas id="main-chart"></canvas>
+        <div class="chart-empty" id="main-empty">Brak pomiarów w wybranym okresie</div>
+      </div>
+      <div class="muted small" id="chart-note" style="padding: 0 20px 14px;">Wszystkie pomiary z ostatnich 24 godzin.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2><i class="fas fa-chart-column"></i> Zużycie dzienne – ostatnie 14 dni</h2></div>
+      <div class="chart short"><canvas id="daily-chart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2><i class="fas fa-table"></i> Ostatnie pomiary</h2></div>
+      <div class="table-wrap">
+        <table class="table" id="readings">
+          <thead><tr><th>Czas</th><th class="right">Napięcie [V]</th><th class="right">Prąd [A]</th><th class="right">Moc [W]</th><th class="right">PF</th></tr></thead>
+          <tbody>
+            {% for d in last_readings %}
+            <tr>
+              <td>{{ d.timestamp|date:"Y-m-d H:i:s" }}</td>
+              <td class="right">{{ d.voltage|floatformat:1 }}</td>
+              <td class="right">{{ d.current|floatformat:2 }}</td>
+              <td class="right">{{ d.power|floatformat:1 }}</td>
+              <td class="right">{{ d.pf|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr class="empty-row"><td colspan="5" class="muted" style="text-align:center;">Brak pomiarów.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
-  <table id="dataTable">
-    <thead>
-      <tr>
-        <th>Czas</th>
-        <th>Napięcie (V)</th>
-        <th>Prąd (A)</th>
-        <th>Moc (W)</th>
-        <th>PF</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for d in last_10_readings %}
-      <tr>
-        <td>{{ d.timestamp|date:"Y-m-d H:i:s" }}</td>
-        <td class="value-cell">{{ d.voltage|floatformat:1|default:"-" }}</td>
-        <td class="value-cell">{{ d.current|floatformat:2|default:"-" }}</td>
-        <td class="value-cell">{{ d.power|floatformat:1|default:"-" }}</td>
-        <td class="value-cell">{{ d.pf|floatformat:2|default:"-" }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5" style="text-align: center; color: var(--text-secondary);">Brak danych historycznych.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+  <div class="stack">
+    <div class="card">
+      <div class="card-head">
+        <h2><i class="fas fa-sliders"></i> Progi alertów</h2>
+        <a href="{% url 'sensor_settings' sensor.id %}" class="small">Zmień</a>
+      </div>
+      <div class="card-body">
+        <div class="row-setting"><span class="muted">Moc</span><strong class="num">{% if sensor.power_threshold %}&gt; {{ sensor.power_threshold|floatformat:0 }} W{% else %}wyłączony{% endif %}</strong></div>
+        <div class="row-setting"><span class="muted">Prąd</span><strong class="num">{% if sensor.current_max_threshold %}&gt; {{ sensor.current_max_threshold|floatformat:1 }} A{% else %}wyłączony{% endif %}</strong></div>
+        <div class="row-setting"><span class="muted">Napięcie</span><strong class="num">{% if sensor.voltage_min_threshold or sensor.voltage_max_threshold %}{% if sensor.voltage_min_threshold %}{{ sensor.voltage_min_threshold|floatformat:0 }}{% else %}—{% endif %} – {% if sensor.voltage_max_threshold %}{{ sensor.voltage_max_threshold|floatformat:0 }}{% else %}—{% endif %} V{% else %}wyłączony{% endif %}</strong></div>
+        <div class="row-setting"><span class="muted">Brak danych</span><strong class="num">po {{ sensor.offline_threshold_seconds }} s</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2><i class="fas fa-file-csv"></i> Eksport pomiarów</h2></div>
+      <form class="card-body" method="get" action="{% url 'sensor_export' sensor.id %}">
+        <div class="form-grid">
+          <div class="field"><label for="exp-from">Od</label><input id="exp-from" type="date" name="from" value="{{ export_from }}"></div>
+          <div class="field"><label for="exp-to">Do</label><input id="exp-to" type="date" name="to" value="{{ export_to }}"></div>
+        </div>
+        <button type="submit" class="btn btn-block" style="margin-top:14px;"><i class="fas fa-download"></i> Pobierz CSV</button>
+        <p class="help">Plik CSV z separatorem „;” – otwiera się bezpośrednio w Excelu.</p>
+      </form>
+    </div>
+  </div>
 </div>
 
+{{ chart_daily|json_script:"daily-data" }}
+{% endblock %}
+
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 (function () {
   const sensorId = {{ sensor.id }};
   const refreshMs = {{ refresh_interval }} * 1000;
-  const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const fmtTime = (d) => d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
-  const pad = (n) => String(n).padStart(2, '0');
-  const fmtFull = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-  const num = (v, digits) => Number(v ?? 0).toLocaleString('pl-PL', { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: false });
-  let chart = null;
-  let lastTs = null;
+  let range = '24h', metric = 'power', rows = [], lastTs = null, chart = null;
+  const labels = { power: ['Moc', 'W'], voltage: ['Napięcie', 'V'] };
 
-  function initChart(rows) {
-    const canvas = document.getElementById('powerChart');
-    if (!rows.length) {
-      canvas.style.display = 'none';
-      document.getElementById('chart-empty').style.display = 'block';
-      return;
-    }
-    // co najwyżej ok. 600 punktów na wykresie – czytelność i wydajność
-    const step = Math.max(1, Math.ceil(rows.length / 600));
-    const pts = rows.filter((_, i) => i % step === 0 || i === rows.length - 1);
-    chart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: pts.map(r => fmtTime(new Date(r.timestamp))),
-        datasets: [{
-          label: 'Moc [W]',
-          data: pts.map(r => r.power),
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.15)',
-          fill: true, tension: 0.25, pointRadius: 0, borderWidth: 2,
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false, animation: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { color: cssVar('--text-secondary'), maxTicksLimit: 12 }, grid: { color: cssVar('--chart-grid') } },
-          y: { beginAtZero: true, ticks: { color: cssVar('--text-secondary') }, grid: { color: cssVar('--chart-grid') },
-               title: { display: true, text: 'W', color: cssVar('--text-secondary') } }
-        }
-      }
-    });
+  // zużycie dzienne
+  const daily = EM.readJSON('daily-data') || [];
+  new Chart(document.getElementById('daily-chart'), {
+    type: 'bar',
+    data: { labels: daily.map(d => d.label), datasets: [{ data: daily.map(d => d.kwh), backgroundColor: EM.css('--accent'), borderRadius: 4 }] },
+    options: EM.chartOptions({ plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${EM.num(c.parsed.y, 2)} kWh` } } } }),
+  });
+
+  function fmtLabel(d) {
+    const t = new Date(d);
+    return range === '24h'
+      ? t.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
+      : t.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }) + ' ' + t.toLocaleTimeString('pl-PL', { hour: '2-digit' }) + ':00';
   }
 
-  function addTableRow(d) {
-    const tbody = document.querySelector('#dataTable tbody');
-    const empty = tbody.querySelector('td[colspan]');
-    if (empty) empty.parentElement.remove();
+  function draw() {
+    const canvas = document.getElementById('main-chart');
+    const empty = document.getElementById('main-empty');
+    if (chart) { chart.destroy(); chart = null; }
+    if (!rows.length) { canvas.style.display = 'none'; empty.style.display = 'grid'; return; }
+    canvas.style.display = ''; empty.style.display = 'none';
+    const step = Math.max(1, Math.ceil(rows.length / 700));
+    const pts = rows.filter((_, i) => i % step === 0 || i === rows.length - 1);
+    const values = pts.map(r => r[metric]);
+    chart = new Chart(canvas, {
+      type: 'line',
+      data: { labels: pts.map(r => fmtLabel(r.timestamp)), datasets: [{ data: values,
+        borderColor: metric === 'power' ? EM.css('--accent') : EM.css('--violet'),
+        backgroundColor: metric === 'power' ? EM.css('--accent-soft') : 'transparent',
+        fill: metric === 'power', tension: 0.2, pointRadius: 0, borderWidth: 1.8 }] },
+      options: EM.chartOptions({
+        scales: {
+          x: { ticks: { color: EM.css('--text-2'), maxTicksLimit: 9, maxRotation: 0 }, grid: { color: EM.css('--chart-grid') } },
+          y: { beginAtZero: metric === 'power', ticks: { color: EM.css('--text-2') }, grid: { color: EM.css('--chart-grid') },
+               title: { display: true, text: labels[metric][1], color: EM.css('--text-2') } },
+        },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${EM.num(c.parsed.y, metric === 'power' ? 0 : 1)} ${labels[metric][1]}` } } },
+      }),
+    });
+    document.getElementById('chart-title').textContent = labels[metric][0];
+    document.getElementById('chart-note').textContent = range === '24h'
+      ? 'Wszystkie pomiary z ostatnich 24 godzin.'
+      : 'Średnie godzinowe z ' + (range === '7d' ? '7 dni.' : '30 dni.');
+  }
+
+  async function load() {
+    try {
+      const r = await fetch(`/dashboard/user/sensor/${sensorId}/data/?range=${range}`, { credentials: 'same-origin' });
+      rows = r.ok ? (await r.json()).data : [];
+    } catch (e) { rows = []; }
+    draw();
+  }
+
+  function addRow(d) {
+    const tbody = document.querySelector('#readings tbody');
+    const empty = tbody.querySelector('.empty-row');
+    if (empty) empty.remove();
     const tr = document.createElement('tr');
-    const cells = [fmtFull(new Date(d.timestamp)), num(d.voltage, 1), num(d.current, 2), num(d.power, 1), num(d.pf, 2)];
-    cells.forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i) td.className = 'value-cell'; tr.appendChild(td); });
+    [EM.dateTime(new Date(d.timestamp)), EM.num(d.voltage, 1), EM.num(d.current, 2), EM.num(d.power, 1), EM.num(d.pf, 2)]
+      .forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i) td.className = 'right'; tr.appendChild(td); });
     tbody.prepend(tr);
     while (tbody.rows.length > 10) tbody.deleteRow(-1);
   }
@@ -382,32 +214,35 @@
       const r = await fetch(`/dashboard/user/sensor/${sensorId}/live/`, { credentials: 'same-origin' });
       if (!r.ok) return;
       const d = await r.json();
-      const ind = document.querySelector('.live-indicator');
-      ind.classList.toggle('online', d.is_online);
-      ind.classList.toggle('offline', !d.is_online);
-      ind.querySelector('.live-text').textContent = d.is_online ? 'ONLINE' : 'OFFLINE';
+      const st = document.getElementById('live-status');
+      st.className = `badge ${d.is_online ? 'badge-success' : 'badge-danger'}`;
+      st.innerHTML = `<span class="dot ${d.is_online ? 'on' : 'off'}"></span>${d.is_online ? 'online' : 'offline'}`;
       if (!d.timestamp) return;
-      document.getElementById('live-power').textContent = Math.round(d.power ?? 0);
-      document.getElementById('live-voltage').textContent = num(d.voltage, 1);
-      document.getElementById('live-current').textContent = num(d.current, 2);
-      document.getElementById('live-pf').textContent = num(d.pf, 2);
-      document.getElementById('live-cost').textContent = `ok. ${num(d.cost_per_hour, 2)} PLN/h`;
-      const t = new Date(d.timestamp);
-      document.getElementById('live-time').textContent = `ostatni pomiar: ${t.toLocaleTimeString('pl-PL')} · odświeżanie co ${refreshMs / 1000} s`;
-      if (lastTs !== d.timestamp) {
-        if (lastTs !== null) {
-          addTableRow(d);
-          if (chart) { chart.data.labels.push(fmtTime(t)); chart.data.datasets[0].data.push(d.power); chart.update('none'); }
-        }
-        lastTs = d.timestamp;
+      document.getElementById('live-power').textContent = EM.num(d.power);
+      document.getElementById('live-voltage').textContent = EM.num(d.voltage, 1);
+      document.getElementById('live-current').textContent = EM.num(d.current, 2);
+      document.getElementById('live-pf').textContent = EM.num(d.pf, 2);
+      document.getElementById('live-cost').textContent = `ok. ${EM.num(d.cost_per_hour, 2)} zł/h`;
+      document.getElementById('live-time').textContent = `pomiar ${new Date(d.timestamp).toLocaleTimeString('pl-PL')} · co ${refreshMs / 1000} s`;
+      if (lastTs !== null && lastTs !== d.timestamp) {
+        addRow(d);
+        if (range === '24h') { rows.push({ timestamp: d.timestamp, power: d.power, voltage: d.voltage }); draw(); }
       }
-    } catch (e) { /* chwilowy brak połączenia – spróbujemy przy następnym odświeżeniu */ }
+      lastTs = d.timestamp;
+    } catch (e) { /* chwilowy brak połączenia */ }
   }
 
-  fetch(`/dashboard/user/sensor/${sensorId}/data/`, { credentials: 'same-origin' })
-    .then(r => r.ok ? r.json() : [])
-    .then(rows => { initChart(rows); refresh(); setInterval(refresh, refreshMs); })
-    .catch(() => { initChart([]); setInterval(refresh, refreshMs); });
+  function bindSwitch(id, attr, setter) {
+    document.querySelectorAll(`#${id} button`).forEach((btn) => btn.addEventListener('click', () => {
+      document.querySelectorAll(`#${id} button`).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      setter(btn.dataset[attr]);
+    }));
+  }
+  bindSwitch('range-switch', 'range', (v) => { range = v; load(); });
+  bindSwitch('metric-switch', 'metric', (v) => { metric = v; draw(); });
+
+  load().then(() => { refresh(); setInterval(refresh, refreshMs); });
 })();
 </script>
 {% endblock %}

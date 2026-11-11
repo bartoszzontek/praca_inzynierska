@@ -1,574 +1,165 @@
 {% extends 'base.html' %}
-{% load cost_filters %}
-
-{% block title %}Dashboard - Energy Monitor{% endblock %}
-
-{% block extra_css %}
-<style>
-  .dashboard-header {
-    margin-bottom: 2rem;
-    animation: fadeIn 0.6s ease-out;
-  }
-
-  .dashboard-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0.5rem;
-  }
-
-  .dashboard-header p {
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-  }
-
-  .stat-card {
-    background: var(--card-gradient);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    transition: all 0.3s ease;
-    animation: fadeIn 0.8s ease-out;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-4px);
-    border-color: #3b82f6;
-    box-shadow: 0 12px 24px rgba(59, 130, 246, 0.2);
-  }
-
-  .stat-icon {
-    width: 70px;
-    height: 70px;
-    border-radius: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-  }
-
-  .stat-icon.blue {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  }
-
-  .stat-icon.green {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  }
-
-  .stat-icon.purple {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  }
-
-  .stat-icon.orange {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  }
-  
-  .stat-icon.red { /* Dodano dla statusu offline */
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  }
-
-  .stat-content h3 {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .stat-content .value {
-    color: var(--text-primary);
-    font-size: 2rem;
-    font-weight: 700;
-    margin-top: 0.25rem;
-  }
-  
-  /* Style dla statusu */
-  .status-online {
-    font-size: 1.2rem;
-    color: #10b981;
-  }
-  .status-offline {
-    font-size: 1.2rem;
-    color: #ef4444;
-  }
-  .status-dot {
-    font-size: 0.5rem;
-    margin-right: 0.5rem;
-    vertical-align: middle;
-  }
-
-
-  .houses-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 2rem;
-  }
-
-  .house-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
-    padding: 0;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    animation: fadeIn 1s ease-out;
-  }
-
-  .house-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    border-color: #3b82f6;
-  }
-
-  .house-header {
-    background: var(--card-gradient);
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .house-title {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .house-title i {
-    font-size: 1.75rem;
-    color: #3b82f6;
-  }
-
-  .house-title h2 {
-    font-size: 1.5rem;
-    color: var(--text-primary);
-    font-weight: 700;
-  }
-
-  .house-address {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-left: 2.75rem;
-  }
-
-  .sensors-list {
-    padding: 1.5rem;
-  }
-
-  .sensor-item {
-    background: var(--surface-inset);
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    padding: 1.25rem;
-    margin-bottom: 1rem;
-    transition: all 0.3s ease;
-  }
-
-  .sensor-item:last-child {
-    margin-bottom: 0;
-  }
-
-  .sensor-item:hover {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
-    transform: translateX(4px);
-  }
-
-  .sensor-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
-
-  .sensor-name {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .sensor-name i {
-    font-size: 1.25rem;
-  }
-
-  .sensor-name h3 {
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    font-weight: 600;
-  }
-
-  .sensor-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-  }
-  
-  .sensor-status.online {
-    color: #10b981;
-  }
-  
-  .sensor-status.offline {
-    color: #ef4444;
-  }
-
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #10b981;
-  }
-  
-  .sensor-status.online .status-dot {
-    animation: pulse-dot 2s ease-in-out infinite;
-  }
-  
-  .sensor-status.offline .status-dot {
-    background: #ef4444;
-  }
-
-  @keyframes pulse-dot {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-
-  .sensor-description {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-    line-height: 1.5;
-  }
-
-  .sensor-actions {
-    display: flex;
-    gap: 0.75rem;
-  }
-
-  .btn-details {
-    flex: 1;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.25rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    text-decoration: none;
-  }
-
-  .btn-details:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
-  }
-
-  .btn-settings {
-    background: var(--surface-hover);
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-  }
-
-  .btn-settings:hover {
-    background: rgba(148, 163, 184, 0.2);
-    color: var(--text-primary);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--text-secondary);
-  }
-
-  .empty-state i {
-    font-size: 5rem;
-    color: var(--border);
-    margin-bottom: 1.5rem;
-  }
-
-  .empty-state h3 {
-    font-size: 1.5rem;
-    color: var(--text-primary);
-    margin-bottom: 0.75rem;
-  }
-
-  .empty-state p {
-    font-size: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  @media (max-width: 768px) {
-    .stats-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .houses-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .dashboard-header h1 {
-      font-size: 2rem;
-    }
-  }
-
-  /* Cel miesięczny */
-  .goal-card {
-    background: var(--card-gradient);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 2rem;
-  }
-  .goal-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-  }
-  .goal-top h3 { color: var(--text-primary); font-size: 1.1rem; }
-  .goal-top span { color: var(--text-secondary); }
-  .goal-bar {
-    height: 0.75rem;
-    background: var(--bg-tertiary);
-    border-radius: 999px;
-    overflow: hidden;
-  }
-  .goal-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #10b981, #3b82f6);
-    border-radius: 999px;
-  }
-  .goal-fill.exceeded { background: linear-gradient(90deg, #f59e0b, #ef4444); }
-  .house-prediction {
-    padding: 0.6rem 1.5rem;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    border-bottom: 1px solid var(--border);
-  }
-  .house-prediction strong { color: var(--text-primary); }
-</style>
-{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="dashboard-header">
-  <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
-  <p>Witaj, {{ user.username }}! Zarządzaj swoimi urządzeniami monitorującymi energię</p>
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p>Bieżące zużycie energii · {{ current_month }}</p>
+  </div>
 </div>
 
-<div class="stats-grid">
-  <div class="stat-card">
-    <div class="stat-icon blue">
-      <i class="fas fa-home"></i>
-    </div>
-    <div class="stat-content">
-      <h3>Domy</h3>
-      <div class="value">{{ houses|length }}</div>
-    </div>
+<div class="grid grid-4">
+  <div class="card stat">
+    <div class="stat-label"><i class="fas fa-bolt"></i> Moc teraz</div>
+    <div class="stat-value"><span id="total-power">{{ totals.power }}</span><span class="unit">W</span></div>
+    <div class="stat-sub">suma czujników online</div>
   </div>
-
-  <div class="stat-card">
-    <div class="stat-icon {% if online_sensors > 0 %}green{% else %}red{% endif %}">
-      <i class="fas fa-plug"></i>
-    </div>
-    <div class="stat-content">
-      <h3>Czujniki Online</h3>
-      <div class="value">{{ online_sensors }} / {{ total_sensors }}</div>
-    </div>
+  <div class="card stat">
+    <div class="stat-label"><i class="fas fa-sun"></i> Dziś</div>
+    <div class="stat-value">{{ totals.today_kwh|floatformat:2 }}<span class="unit">kWh</span></div>
+    <div class="stat-sub">{{ totals.today_cost|floatformat:2 }} zł</div>
   </div>
-  
-  <div class="stat-card">
-    <div class="stat-icon purple">
-      <i class="fas fa-bolt"></i>
-    </div>
-    <div class="stat-content">
-      <h3>Status</h3>
-      {% if online_sensors > 0 %}
-        <div class="value status-online">
-          <i class="fas fa-circle status-dot"></i>
-          Aktywne
-        </div>
-      {% else %}
-         <div class="value status-offline">
-          <i class="fas fa-circle status-dot"></i>
-          Offline
-        </div>
-      {% endif %}
-    </div>
+  <div class="card stat">
+    <div class="stat-label"><i class="fas fa-calendar"></i> Ten miesiąc</div>
+    <div class="stat-value">{{ totals.month_kwh|floatformat:1 }}<span class="unit">kWh</span></div>
+    <div class="stat-sub">{{ totals.month_cost|floatformat:2 }} zł</div>
   </div>
-
-  <div class="stat-card">
-    <div class="stat-icon orange">
-      <i class="fas fa-clock"></i>
-    </div>
-    <div class="stat-content">
-      <h3>Ostatni odczyt</h3>
-      <div class="value" style="font-size: 1.2rem;">
-        {% if last_reading_time %}
-          {{ last_reading_time|date:"Y-m-d" }}
-          <br>
-          {{ last_reading_time|time:"H:i:s" }}
-        {% else %}
-          Brak danych
-        {% endif %}
-      </div>
-    </div>
+  <div class="card stat">
+    <div class="stat-label"><i class="fas fa-microchip"></i> Czujniki online</div>
+    <div class="stat-value"><span id="online-count">{{ totals.online }}</span><span class="unit">/ {{ totals.sensors }}</span></div>
+    <div class="stat-sub">odświeżanie co 30 s</div>
   </div>
 </div>
 
 {% if goal %}
-<div class="goal-card">
-  <div class="goal-top">
-    <h3><i class="fas fa-bullseye" style="color: var(--accent);"></i> Cel miesięczny – {{ current_month }}</h3>
-    <span>{{ goal.current|floatformat:2 }} / {{ goal.target|floatformat:0 }} kWh ({{ goal.percent|floatformat:0 }}%)</span>
+<div class="card card-body section">
+  <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+    <strong><i class="fas fa-bullseye" style="color: var(--accent);"></i> Cel miesięczny</strong>
+    <span class="muted num">{{ totals.month_kwh|floatformat:1 }} z {{ goal.target|floatformat:0 }} kWh ({{ goal.percent|floatformat:0 }}%)</span>
   </div>
-  <div class="goal-bar"><div class="goal-fill {% if goal.exceeded %}exceeded{% endif %}" style="width: {{ goal.bar|stringformat:'s' }}%;"></div></div>
+  <div class="progress {% if goal.exceeded %}over{% endif %}"><span style="width: {{ goal.bar|stringformat:'s' }}%"></span></div>
 </div>
 {% endif %}
 
-{% if houses_with_costs %}
-  <div class="houses-grid">
-    {% for item in houses_with_costs %}
-      <div class="house-card">
-        <div class="house-header">
-          <div class="house-title">
-            <i class="fas fa-home"></i>
-            <h2>{{ item.house.name }}</h2>
-          </div>
-          {% if item.house.address %}
-            <div class="house-address">
-              <i class="fas fa-map-marker-alt"></i>
-              <span>{{ item.house.address }}</span>
-            </div>
-          {% endif %}
+<div class="grid grid-main section">
+  <div class="stack">
+    {% for c in cards %}
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2><i class="fas fa-house"></i> {{ c.house.name }}</h2>
+          {% if c.house.address %}<div class="muted small">{{ c.house.address }}</div>{% endif %}
         </div>
-        
-        <div style="padding: 1rem 1.5rem; background: var(--surface-inset-soft); border-bottom: 1px solid var(--border);">
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
-            <div>
-              <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
-                Miesiąc
-              </div>
-              <div style="color: #3b82f6; font-size: 1.25rem; font-weight: 700;">
-                {{ item.monthly_kwh|floatformat:2 }} kWh
-              </div>
-            </div>
-            <div>
-              <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
-                Koszt
-              </div>
-              <div style="color: #f59e0b; font-size: 1.25rem; font-weight: 700;">
-                {{ item.monthly_cost|floatformat:2 }} PLN
-              </div>
-            </div>
-            <div>
-              <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem;">
-                Teraz
-              </div>
-              <div style="color: #10b981; font-size: 1.25rem; font-weight: 700;">
-                {{ item.current_power }} W
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {% if item.prediction %}
-        <div class="house-prediction">
-          <i class="fas fa-chart-line"></i>
-          Prognoza na koniec miesiąca: <strong>{{ item.prediction.predicted_kwh|floatformat:1 }} kWh</strong>
-          (ok. <strong>{{ item.prediction.predicted_cost|floatformat:2 }} PLN</strong>)
-        </div>
-        {% endif %}
-
-        <div class="sensors-list">
-          {% if item.house.sensors.all %}
-            {% for sensor in item.house.sensors.all %}
-              <div class="sensor-item">
-                <div class="sensor-header">
-                  <div class="sensor-name">
-                    <i class="fas fa-{{ sensor.icon|default:'microchip' }}" style="color: {{ sensor.color|default:'#10b981' }};"></i>
-                    <h3>{{ sensor.name }}</h3>
-                  </div>
-                  {% if sensor.is_online %}
-                    <div class="sensor-status online">
-                      <span class="status-dot"></span>
-                      Online
-                    </div>
-                  {% else %}
-                    <div class="sensor-status offline">
-                      <span class="status-dot"></span>
-                      Offline
-                    </div>
-                  {% endif %}
-                </div>
-
-                {% if sensor.description %}
-                  <p class="sensor-description">{{ sensor.description }}</p>
-                {% endif %}
-
-                <div class="sensor-actions">
-                  <a href="{% url 'sensor_detail' sensor.id %}" class="btn-details">
-                    <i class="fas fa-chart-area"></i>
-                    Szczegóły
-                  </a>
-                  <a href="{% url 'comparison' item.house.id %}" class="btn-settings" style="padding: 0.75rem 1rem;">
-                    <i class="fas fa-chart-bar"></i>
-                  </a>
-                </div>
-              </div>
-            {% endfor %}
-          {% else %}
-            <p style="text-align: center; color: var(--text-secondary); padding: 2rem;">
-              <i class="fas fa-inbox" style="font-size: 2rem; display: block; margin-bottom: 1rem; opacity: 0.5;"></i>
-              Brak czujników w tym domu
-            </p>
-          {% endif %}
+        <div class="head-actions">
+          <a href="{% url 'house' c.house.id %}" class="btn btn-sm"><i class="fas fa-chart-column"></i> Statystyki</a>
+          <a href="{% url 'house_settings' c.house.id %}" class="btn btn-sm" title="Ustawienia domu"><i class="fas fa-gear"></i></a>
         </div>
       </div>
+      <div class="house-metrics">
+        <div><div class="metric-label">Moc teraz</div><div class="metric-value"><span data-house-power="{{ c.house.id }}">{{ c.power }}</span> W</div></div>
+        <div><div class="metric-label">Dziś</div><div class="metric-value">{{ c.today_kwh|floatformat:2 }} kWh</div></div>
+        <div><div class="metric-label">Miesiąc</div><div class="metric-value">{{ c.month_kwh|floatformat:1 }} kWh · {{ c.month_cost|floatformat:2 }} zł</div></div>
+        <div><div class="metric-label">Prognoza na miesiąc</div><div class="metric-value">{{ c.prediction_kwh|floatformat:0 }} kWh · {{ c.prediction_cost|floatformat:0 }} zł</div></div>
+      </div>
+      <div class="spark">
+        <canvas data-spark="{{ c.house.id }}"></canvas>
+        <div class="chart-empty">Brak pomiarów z ostatniej doby</div>
+      </div>
+      <ul class="list">
+        {% for st in c.sensors %}
+        <li>
+          <a class="list-item" href="{% url 'sensor_detail' st.sensor.id %}">
+            <span class="sensor-icon" style="color: {{ st.sensor.color }};"><i class="fas fa-{{ st.sensor.icon|default:'microchip' }}"></i></span>
+            <span class="list-main">
+              <span class="list-title">{{ st.sensor.name }}</span><br>
+              <span class="list-sub">{{ st.sensor.location|default:"—" }}</span>
+            </span>
+            <span class="badge {% if st.online %}badge-success{% else %}badge-danger{% endif %}" data-sensor-status="{{ st.sensor.id }}">
+              <span class="dot {% if st.online %}on{% else %}off{% endif %}"></span>{% if st.online %}online{% else %}offline{% endif %}
+            </span>
+            <span class="list-value" style="min-width: 70px;"><span data-sensor-power="{{ st.sensor.id }}">{% if st.power is not None %}{{ st.power }} W{% else %}—{% endif %}</span></span>
+          </a>
+        </li>
+        {% empty %}
+        <li class="list-item muted">Brak czujników w tym domu. Czujnik dodaje administrator systemu.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% empty %}
+    <div class="card empty">
+      <i class="fas fa-house-circle-exclamation"></i>
+      <h3>Nie masz jeszcze dodanego domu</h3>
+      <p>Dom i czujniki przypisuje administrator systemu.</p>
+    </div>
     {% endfor %}
   </div>
-{% else %}
-  <div class="empty-state">
-    <i class="fas fa-home"></i>
-    <h3>Nie masz jeszcze dodanych domów</h3>
-    <p>Skontaktuj się z administratorem, aby dodać pierwsze urządzenie</p>
-  </div>
-{% endif %}
 
+  <div class="card">
+    <div class="card-head">
+      <h2><i class="fas fa-bell"></i> Aktywne alerty</h2>
+      <a href="{% url 'alerts' %}" class="small">Wszystkie</a>
+    </div>
+    {% for alert in recent_alerts %}
+    <div class="alert-item">
+      <div class="alert-icon {{ alert.severity }}"><i class="fas {% if alert.severity == 'critical' %}fa-triangle-exclamation{% elif alert.severity == 'warning' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %}"></i></div>
+      <div class="alert-main">
+        <div class="alert-title small">{{ alert.get_alert_type_display }}</div>
+        <div class="alert-meta">{{ alert.house.name }}{% if alert.sensor %} · {{ alert.sensor.name }}{% endif %} · {{ alert.created_at|date:"d.m H:i" }}</div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty"><i class="fas fa-circle-check"></i>Brak aktywnych alertów</div>
+    {% endfor %}
+  </div>
+</div>
+
+{{ charts|json_script:"spark-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-  // Auto-refresh data every 30 seconds
-  setTimeout(() => {
-    location.reload();
-  }, 30000);
+(function () {
+  const data = EM.readJSON('spark-data') || {};
+  document.querySelectorAll('canvas[data-spark]').forEach((canvas) => {
+    const rows = data[canvas.dataset.spark] || [];
+    if (!rows.length) { canvas.style.display = 'none'; canvas.nextElementSibling.style.display = 'grid'; return; }
+    new Chart(canvas, {
+      type: 'line',
+      data: { labels: rows.map(r => r.t), datasets: [{ data: rows.map(r => r.p), borderColor: EM.css('--accent'),
+        backgroundColor: EM.css('--accent-soft'), fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }] },
+      options: EM.chartOptions({ scales: { x: { display: false }, y: { display: false, beginAtZero: true } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${EM.num(c.parsed.y)} W (średnio)` } } } }),
+    });
+  });
+
+  // odświeżanie mocy i statusów w tle (bez przeładowania strony)
+  async function refresh() {
+    try {
+      const r = await fetch('{% url "dashboard-live" %}', { credentials: 'same-origin' });
+      if (!r.ok) return;
+      const d = await r.json();
+      document.getElementById('total-power').textContent = d.total_power;
+      document.getElementById('online-count').textContent = d.online;
+      const perHouse = {};
+      d.sensors.forEach((s) => {
+        perHouse[s.house] = (perHouse[s.house] || 0) + (s.power || 0);
+        const p = document.querySelector(`[data-sensor-power="${s.id}"]`);
+        if (p) p.textContent = s.power === null ? '—' : `${s.power} W`;
+        const b = document.querySelector(`[data-sensor-status="${s.id}"]`);
+        if (b) {
+          b.className = `badge ${s.online ? 'badge-success' : 'badge-danger'}`;
+          b.innerHTML = `<span class="dot ${s.online ? 'on' : 'off'}"></span>${s.online ? 'online' : 'offline'}`;
+        }
+      });
+      Object.entries(perHouse).forEach(([id, p]) => {
+        const el = document.querySelector(`[data-house-power="${id}"]`);
+        if (el) el.textContent = p;
+      });
+    } catch (e) { /* chwilowy brak połączenia */ }
+  }
+  setInterval(refresh, 30000);
+})();
 </script>
 {% endblock %}

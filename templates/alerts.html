@@ -1,452 +1,93 @@
 {% extends 'base.html' %}
 {% load cost_filters %}
-
-{% block title %}Alerty - Energy Monitor{% endblock %}
-
-{% block extra_css %}
-<style>
-  .alerts-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    animation: fadeIn 0.6s ease-out;
-    flex-wrap: wrap; /* Lepsze na mobilnych */
-    gap: 1rem;
-  }
-
-  .alerts-header h1 {
-    font-size: 2rem;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  /* NOWY STYL DLA PRZYCISKU */
-  .btn-create {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.75rem;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .btn-create:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
-  }
-  /* KONIEC NOWEGO STYLU */
-
-  .filters {
-    display: flex;
-    gap: 1rem;
-    background: var(--bg-secondary);
-    padding: 1rem;
-    border-radius: 0.75rem;
-    border: 1px solid var(--border);
-    margin-bottom: 2rem;
-  }
-
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .filter-group label {
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-
-  .filter-select {
-    padding: 0.5rem 1rem;
-    background: var(--surface-inset);
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    color: var(--text-primary);
-    cursor: pointer;
-  }
-
-  .alerts-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .alert-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-    animation: fadeIn 0.8s ease-out;
-  }
-
-  .alert-card:hover {
-    transform: translateX(4px);
-    border-color: #3b82f6;
-  }
-
-  .alert-card.unread {
-    border-left: 4px solid #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
-  }
-
-  .alert-card.critical {
-    border-left: 4px solid #ef4444;
-    background: rgba(239, 68, 68, 0.05);
-  }
-
-  .alert-card.warning {
-    border-left: 4px solid #f59e0b;
-  }
-
-  .alert-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    margin-bottom: 1rem;
-  }
-
-  .alert-title {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .severity-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-
-  .severity-badge.info {
-    background: #3b82f6;
-    color: white;
-  }
-
-  .severity-badge.warning {
-    background: #f59e0b;
-    color: white;
-  }
-
-  .severity-badge.critical {
-    background: #ef4444;
-    color: white;
-  }
-
-  .alert-type {
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    font-weight: 600;
-  }
-
-  .alert-badges {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .badge {
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .badge.read {
-    background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
-  }
-
-  .badge.resolved {
-    background: rgba(59, 130, 246, 0.2);
-    color: #3b82f6;
-  }
-
-  .badge.email {
-    background: rgba(139, 92, 246, 0.2);
-    color: #8b5cf6;
-  }
-
-  .alert-message {
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-    line-height: 1.6;
-  }
-
-  .alert-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-  }
-
-  .alert-location {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .alert-time {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-  }
-
-  .alert-value {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .value-box {
-    background: var(--surface-inset);
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    flex: 1;
-  }
-
-  .value-box label {
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    display: block;
-    margin-bottom: 0.25rem;
-  }
-
-  .value-box .value {
-    color: var(--text-primary);
-    font-size: 1.25rem;
-    font-weight: 700;
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--text-secondary);
-  }
-
-  .empty-state i {
-    font-size: 5rem;
-    color: var(--border);
-    margin-bottom: 1.5rem;
-  }
-
-  @media (max-width: 768px) {
-    .filters {
-      flex-direction: column;
-    }
-
-    .alert-header {
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .alert-meta {
-      flex-direction: column;
-      gap: 0.5rem;
-      align-items: start;
-    }
-  }
-
-  .alert-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-  }
-  .alert-actions form { margin: 0; }
-  .btn-alert {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
-    padding: 0.4rem 0.9rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-size: 0.85rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    transition: all 0.2s ease;
-  }
-  .btn-alert:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-alert.success:hover { border-color: var(--success); color: var(--success); }
-  .btn-alert.danger:hover { border-color: var(--danger); color: var(--danger); }
-  .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-</style>
-{% endblock %}
+{% block title %}Alerty{% endblock %}
 
 {% block content %}
-<div class="alerts-header">
-  <h1><i class="fas fa-bell"></i> Alerty i powiadomienia</h1>
-  
-  <div class="header-actions">
+<div class="page-head">
+  <div>
+    <h1>Alerty</h1>
+    <p>Powiadomienia tworzone automatycznie na podstawie progów czujników</p>
+  </div>
+  <div class="head-actions">
+    {% if unread_alerts_count %}
     <form method="post" action="{% url 'alerts_mark_all_read' %}">
       {% csrf_token %}
-      <button type="submit" class="btn-alert" style="padding: 0.75rem 1.25rem;"><i class="fas fa-check-double"></i> Oznacz wszystkie jako przeczytane</button>
+      <button type="submit" class="btn btn-sm"><i class="fas fa-check-double"></i> Oznacz wszystkie jako przeczytane</button>
     </form>
-    <a href="{% url 'alert_create' %}" class="btn-create">
-      <i class="fas fa-plus-circle"></i> Dodaj alert
-    </a>
-  </div>
-</div>
-
-<div class="filters">
-  <div class="filter-group">
-    <label>Typ</label>
-    <select class="filter-select" onchange="applyFilters('type', this.value)">
-      <option value="">Wszystkie</option>
-      <option value="power_high" {% if filter_type == 'power_high' %}selected{% endif %}>Przekroczenie mocy</option>
-      <option value="current_high" {% if filter_type == 'current_high' %}selected{% endif %}>Przekroczenie prądu</option>
-      <option value="voltage_anomaly" {% if filter_type == 'voltage_anomaly' %}selected{% endif %}>Anomalia napięcia</option>
-      <option value="monthly_limit" {% if filter_type == 'monthly_limit' %}selected{% endif %}>Limit miesięczny</option>
-      <option value="sensor_offline" {% if filter_type == 'sensor_offline' %}selected{% endif %}>Czujnik offline</option>
-      <option value="sensor_online" {% if filter_type == 'sensor_online' %}selected{% endif %}>Czujnik znów online</option>
-      <option value="anomaly" {% if filter_type == 'anomaly' %}selected{% endif %}>Inna anomalia</option>
-    </select>
-  </div>
-
-  <div class="filter-group">
-    <label>Ważność</label>
-    <select class="filter-select" onchange="applyFilters('severity', this.value)">
-      <option value="">Wszystkie</option>
-      <option value="info" {% if filter_severity == 'info' %}selected{% endif %}>Informacja</option>
-      <option value="warning" {% if filter_severity == 'warning' %}selected{% endif %}>Ostrzeżenie</option>
-      <option value="critical" {% if filter_severity == 'critical' %}selected{% endif %}>Krytyczny</option>
-    </select>
-  </div>
-
-  <div class="filter-group">
-    <label>Status</label>
-    <select class="filter-select" onchange="applyFilters('status', this.value)">
-      <option value="">Wszystkie</option>
-      <option value="unread" {% if filter_status == 'unread' %}selected{% endif %}>Nieprzeczytane</option>
-      <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Aktywne (nierozwiązane)</option>
-      <option value="resolved" {% if filter_status == 'resolved' %}selected{% endif %}>Rozwiązane</option>
-    </select>
-  </div>
-</div>
-
-{% if alerts %}
-<div class="alerts-list">
-  {% for alert in alerts %}
-  <div class="alert-card {% if not alert.is_read %}unread{% endif %} {% if alert.severity == 'critical' %}critical{% elif alert.severity == 'warning' %}warning{% endif %}">
-    <div class="alert-header">
-      <div class="alert-title">
-        <span class="severity-badge {{ alert.severity }}">
-          {% if alert.severity == 'critical' %}
-            <i class="fas fa-exclamation-triangle"></i>
-          {% elif alert.severity == 'warning' %}
-            <i class="fas fa-exclamation-circle"></i>
-          {% else %}
-            <i class="fas fa-info-circle"></i>
-          {% endif %}
-          {{ alert.get_severity_display }}
-        </span>
-        <span class="alert-type">{{ alert.get_alert_type_display }}</span>
-      </div>
-      
-      <div class="alert-badges">
-        {% if alert.is_read %}
-          <span class="badge read"><i class="fas fa-check"></i> Przeczytane</span>
-        {% endif %}
-        {% if alert.is_resolved %}
-          <span class="badge resolved"><i class="fas fa-check-circle"></i> Rozwiązane</span>
-        {% endif %}
-        {% if alert.email_sent %}
-          <span class="badge email"><i class="fas fa-envelope"></i></span>
-        {% endif %}
-      </div>
-    </div>
-
-    <p class="alert-message">{{ alert.message }}</p>
-
-    {% if alert.value is not None and alert.threshold is not None %}
-    <div class="alert-value">
-      <div class="value-box">
-        <label>Wartość</label>
-        <div class="value">{{ alert.value|floatformat:1 }}</div>
-      </div>
-      <div class="value-box">
-        <label>Próg</label>
-        <div class="value">{{ alert.threshold|floatformat:1 }}</div>
-      </div>
-      <div class="value-box">
-        <label>Przekroczenie</label>
-        <div class="value" style="color: #ef4444;">{{ alert.value|abs_diff:alert.threshold|floatformat:1 }}</div>
-      </div>
-    </div>
     {% endif %}
+  </div>
+</div>
 
-    <div class="alert-meta">
-      <div class="alert-location">
-        <i class="fas fa-home"></i>
-        <span>{{ alert.house.name }}</span>
-        {% if alert.sensor %}
-          <span>→</span>
-          <i class="fas fa-microchip"></i>
-          <span>{{ alert.sensor.name }}</span>
-        {% endif %}
+<div class="card">
+  <form class="filters" method="get">
+    <div class="field">
+      <label for="f-type">Typ</label>
+      <select id="f-type" name="type" onchange="this.form.submit()">
+        <option value="">Wszystkie</option>
+        {% for value, label in alert_types %}
+        <option value="{{ value }}" {% if filter_type == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-sev">Ważność</label>
+      <select id="f-sev" name="severity" onchange="this.form.submit()">
+        <option value="">Wszystkie</option>
+        <option value="critical" {% if filter_severity == 'critical' %}selected{% endif %}>Krytyczny</option>
+        <option value="warning" {% if filter_severity == 'warning' %}selected{% endif %}>Ostrzeżenie</option>
+        <option value="info" {% if filter_severity == 'info' %}selected{% endif %}>Informacja</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-status">Status</label>
+      <select id="f-status" name="status" onchange="this.form.submit()">
+        <option value="">Wszystkie</option>
+        <option value="unread" {% if filter_status == 'unread' %}selected{% endif %}>Nieprzeczytane</option>
+        <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Nierozwiązane</option>
+        <option value="resolved" {% if filter_status == 'resolved' %}selected{% endif %}>Rozwiązane</option>
+      </select>
+    </div>
+    {% if filter_type or filter_severity or filter_status %}<a href="{% url 'alerts' %}" class="btn btn-sm">Wyczyść filtry</a>{% endif %}
+  </form>
+
+  {% for alert in alerts %}
+  <div class="alert-item {% if not alert.is_read %}unread{% endif %}">
+    <div class="alert-icon {{ alert.severity }}"><i class="fas {% if alert.severity == 'critical' %}fa-triangle-exclamation{% elif alert.severity == 'warning' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %}"></i></div>
+    <div class="alert-main">
+      <div class="alert-title">
+        {{ alert.get_alert_type_display }}
+        {% if not alert.is_read %}<span class="badge badge-info">nowy</span>{% endif %}
+        {% if alert.is_resolved %}<span class="badge badge-success">rozwiązany</span>{% endif %}
+        {% if alert.email_sent %}<span class="badge" title="Wysłano email"><i class="fas fa-envelope"></i></span>{% endif %}
       </div>
-      <div class="alert-time">
-        <i class="far fa-clock"></i>
-        {{ alert.created_at|date:"Y-m-d H:i:s" }}
+      <div class="muted small">{{ alert.message }}</div>
+      {% if alert.value is not None and alert.threshold is not None %}
+      <div class="alert-values num">
+        <span>wartość <strong>{{ alert.value|floatformat:1 }}</strong></span>
+        <span>próg <strong>{{ alert.threshold|floatformat:1 }}</strong></span>
+        <span>różnica <strong style="color: var(--danger);">{{ alert.value|abs_diff:alert.threshold|floatformat:1 }}</strong></span>
+      </div>
+      {% endif %}
+      <div class="alert-meta">
+        <i class="fas fa-house"></i> {{ alert.house.name }}{% if alert.sensor %} · <a href="{% url 'sensor_detail' alert.sensor.id %}">{{ alert.sensor.name }}</a>{% endif %}
+        · {{ alert.created_at|date:"Y-m-d H:i:s" }}
       </div>
     </div>
-
     <div class="alert-actions">
       {% if not alert.is_read %}
-      <form method="post" action="{% url 'alert_action' alert.id 'read' %}">
-        {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-        <button type="submit" class="btn-alert"><i class="fas fa-eye"></i> Przeczytane</button>
-      </form>
+      <form method="post" action="{% url 'alert_action' alert.id 'read' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn btn-sm" title="Oznacz jako przeczytany"><i class="fas fa-eye"></i></button></form>
       {% endif %}
       {% if not alert.is_resolved %}
-      <form method="post" action="{% url 'alert_action' alert.id 'resolve' %}">
-        {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-        <button type="submit" class="btn-alert success"><i class="fas fa-check-circle"></i> Rozwiązane</button>
-      </form>
+      <form method="post" action="{% url 'alert_action' alert.id 'resolve' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn btn-sm"><i class="fas fa-check"></i> Rozwiązany</button></form>
       {% endif %}
-      <form method="post" action="{% url 'alert_action' alert.id 'delete' %}" onsubmit="return confirm('Usunąć ten alert?');">
-        {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-        <button type="submit" class="btn-alert danger"><i class="fas fa-trash"></i> Usuń</button>
-      </form>
+      <form method="post" action="{% url 'alert_action' alert.id 'delete' %}" onsubmit="return confirm('Usunąć ten alert?');">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn btn-sm btn-danger" title="Usuń"><i class="fas fa-trash"></i></button></form>
     </div>
   </div>
+  {% empty %}
+  <div class="empty"><i class="fas fa-bell-slash"></i>Brak alertów spełniających wybrane kryteria.</div>
   {% endfor %}
 </div>
-{% else %}
-<div class="empty-state">
-  <i class="fas fa-bell-slash"></i>
-  <h3>Brak alertów</h3>
-  <p>Nie masz żadnych alertów spełniających wybrane kryteria</p>
-</div>
-{% endif %}
-
-<script>
-  function applyFilters(name, value) {
-    const url = new URL(window.location);
-    if (value) {
-      url.searchParams.set(name, value);
-    } else {
-      url.searchParams.delete(name);
-    }
-    window.location = url;
-  }
-</script>
 {% endblock %}

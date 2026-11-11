@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Alert, House, Sensor
+from .models import House, Sensor
 
 class CustomUserCreationForm(UserCreationForm):
     """
@@ -50,41 +50,120 @@ class CustomUserCreationForm(UserCreationForm):
             if field_name == 'password2':
                 field.label = 'Potwierdź hasło'
 
-# --- NOWY FORMULARZ ---
-class AlertForm(forms.ModelForm):
-    """Formularz do ręcznego tworzenia alertów przez użytkownika."""
-    
+SENSOR_ICONS = [
+    ('microchip', 'Moduł pomiarowy'),
+    ('plug', 'Gniazdko'),
+    ('bolt', 'Obwód'),
+    ('snowflake', 'Lodówka / zamrażarka'),
+    ('fire', 'Kuchenka / piekarnik'),
+    ('tv', 'RTV'),
+    ('desktop', 'Komputer'),
+    ('lightbulb', 'Oświetlenie'),
+    ('shirt', 'Pralka / suszarka'),
+    ('temperature-high', 'Ogrzewanie'),
+]
+
+
+class StyledFormMixin:
+    """Dodaje klasę CSS do wszystkich pól formularza."""
+
+    def _style_fields(self):
+        for field in self.fields.values():
+            widget = field.widget
+            if not isinstance(widget, (forms.CheckboxInput, forms.RadioSelect)):
+                widget.attrs['class'] = (widget.attrs.get('class', '') + ' input').strip()
+
+
+class SensorSettingsForm(StyledFormMixin, forms.ModelForm):
+    """Ustawienia czujnika edytowane przez właściciela domu."""
+
+    icon = forms.ChoiceField(choices=SENSOR_ICONS, label='Ikona')
+
     class Meta:
-        model = Alert
-        fields = ['house', 'sensor', 'alert_type', 'severity', 'message', 'value', 'threshold']
+        model = Sensor
+        fields = ['name', 'location', 'description', 'icon', 'color',
+                  'power_threshold', 'current_max_threshold',
+                  'voltage_min_threshold', 'voltage_max_threshold',
+                  'offline_threshold_seconds']
         widgets = {
-            'message': forms.Textarea(attrs={'rows': 4}),
+            'description': forms.Textarea(attrs={'rows': 2}),
+            'color': forms.TextInput(attrs={'type': 'color'}),
+        }
+        help_texts = {
+            'location': 'Np. Kuchnia, Salon, Garaż',
+            'color': 'Kolor ikony czujnika',
+        }
+        labels = {
+            'power_threshold': 'Próg mocy [W]',
+            'current_max_threshold': 'Maks. prąd [A]',
+            'voltage_min_threshold': 'Min. napięcie [V]',
+            'voltage_max_threshold': 'Maks. napięcie [V]',
+            'offline_threshold_seconds': 'Brak danych po [s]',
         }
 
     def __init__(self, *args, **kwargs):
-        # Pobierz zalogowanego użytkownika przekazanego z widoku
-        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-
-        if self.user:
-            # Filtruj listę domów, aby pokazać tylko te należące do użytkownika
-            self.fields['house'].queryset = House.objects.filter(user=self.user)
-            
-            # Filtruj listę czujników, aby pokazać tylko te z domów użytkownika
-            self.fields['sensor'].queryset = Sensor.objects.filter(house__user=self.user)
-
-        # Ustaw pole 'sensor' jako nieobowiązkowe (alert może dotyczyć całego domu)
-        self.fields['sensor'].required = False
-
-        # Dodaj klasy CSS do wszystkich pól
-        for field_name, field in self.fields.items():
-            if not isinstance(field.widget, forms.CheckboxInput):
-                field.widget.attrs['class'] = 'form-control'
+        self._style_fields()
+        self.fields['offline_threshold_seconds'].min_value = 20
+        self.fields['offline_threshold_seconds'].widget.attrs['min'] = 20
 
     def clean(self):
         cleaned = super().clean()
-        house = cleaned.get('house')
-        sensor = cleaned.get('sensor')
-        if house and sensor and sensor.house_id != house.id:
-            self.add_error('sensor', 'Wybrany czujnik nie należy do wybranego domu.')
+        vmin, vmax = cleaned.get('voltage_min_threshold'), cleaned.get('voltage_max_threshold')
+        if vmin is not None and vmax is not None and vmin >= vmax:
+            self.add_error('voltage_max_threshold', 'Maksymalne napięcie musi być większe od minimalnego.')
+        for name in ('power_threshold', 'current_max_threshold', 'voltage_min_threshold', 'voltage_max_threshold'):
+            value = cleaned.get(name)
+            if value is not None and value <= 0:
+                self.add_error(name, 'Wartość musi być dodatnia (puste pole wyłącza alert).')
         return cleaned
+
+
+class HouseSettingsForm(StyledFormMixin, forms.ModelForm):
+    """Ustawienia domu edytowane przez właściciela."""
+
+    class Meta:
+        model = House
+        fields = ['name', 'address', 'price_per_kwh', 'monthly_limit_kwh', 'alert_email']
+        labels = {
+            'price_per_kwh': 'Cena za kWh [zł]',
+            'monthly_limit_kwh': 'Limit miesięczny [kWh]',
+            'alert_email': 'Email do alertów',
+        }
+        help_texts = {
+            'monthly_limit_kwh': 'Po przekroczeniu powstaje alert. Puste pole wyłącza limit.',
+            'alert_email': 'Jeśli puste, alerty trafiają na adres z konta.',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._style_fields()
+        self.fields['price_per_kwh'].widget.attrs.update({'step': '0.01', 'min': '0'})
+
+    def clean_price_per_kwh(self):
+        price = self.cleaned_data['price_per_kwh']
+        if price is None or price < 0:
+            raise forms.ValidationError('Cena nie może być ujemna.')
+        return price
+
+    def clean_monthly_limit_kwh(self):
+        limit = self.cleaned_data.get('monthly_limit_kwh')
+        if limit is not None and limit <= 0:
+            raise forms.ValidationError('Limit musi być dodatni.')
+        return limit
+
+
+class AdminSensorForm(StyledFormMixin, forms.ModelForm):
+    """Dodawanie czujnika przez administratora."""
+
+    class Meta:
+        model = Sensor
+        fields = ['house', 'sensor_id', 'name', 'location']
+        labels = {'house': 'Dom', 'sensor_id': 'Identyfikator czujnika (np. ESP-001)'}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._style_fields()
+        self.fields['sensor_id'].required = True
+        self.fields['house'].queryset = House.objects.select_related('user').order_by('user__username', 'name')
+        self.fields['house'].label_from_instance = lambda h: f"{h.name} ({h.user.username})"

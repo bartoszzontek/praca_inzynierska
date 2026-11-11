@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Czujniki – administracja{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Czujniki</h1>
+    <p>Wszystkie czujniki w systemie i dodawanie nowych modułów pomiarowych</p>
+  </div>
+</div>
+{% include '_admin_tabs.html' with tab='sensors' %}
+
+{% if new_sensor %}
+<div class="card card-body" style="border-color: var(--success); margin-bottom: 16px;">
+  <strong><i class="fas fa-circle-check" style="color: var(--success);"></i> Czujnik {{ new_sensor.sensor_id }} dodany</strong>
+  <p class="muted small" style="margin: 6px 0 10px;">Wpisz w konfiguracji modułu pomiarowego identyfikator <code>{{ new_sensor.sensor_id }}</code> i poniższy klucz API. Klucz jest też dostępny w ustawieniach czujnika u właściciela domu.</p>
+  <div class="token"><code>{{ new_sensor.api_token }}</code></div>
+</div>
+{% endif %}
+
+<div class="grid grid-main">
+  <div class="card">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Czujnik</th><th>Dom / użytkownik</th><th>Status</th><th>Ostatni pomiar</th></tr></thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td><strong>{{ r.sensor.name }}</strong><div class="muted small">{{ r.sensor.sensor_id|default:"—" }} · {{ r.sensor.location|default:"—" }}</div></td>
+            <td>{{ r.sensor.house.name }}<div class="muted small">{{ r.sensor.house.user.username }}</div></td>
+            <td><span class="badge {% if r.online %}badge-success{% else %}badge-danger{% endif %}"><span class="dot {% if r.online %}on{% else %}off{% endif %}"></span>{% if r.online %}online{% else %}offline{% endif %}</span></td>
+            <td>{% if r.last %}{{ r.last.timestamp|date:"Y-m-d H:i:s" }}{% else %}<span class="muted">brak</span>{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="muted" style="text-align:center;">Brak czujników.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <form method="post" class="card">
+    {% csrf_token %}
+    <div class="card-head"><h2><i class="fas fa-plus"></i> Dodaj czujnik</h2></div>
+    <div class="card-body">
+      <div class="stack" style="gap: 14px;">
+        {% include '_field.html' with field=form.house %}
+        {% include '_field.html' with field=form.sensor_id %}
+        {% include '_field.html' with field=form.name %}
+        {% include '_field.html' with field=form.location %}
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top: 18px;"><i class="fas fa-plus"></i> Dodaj i wygeneruj klucz</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

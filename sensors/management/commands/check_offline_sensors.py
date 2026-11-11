@@ -31,7 +31,12 @@ class Command(BaseCommand):
                 if time_diff < timedelta(seconds=sensor.offline_threshold_seconds):
                     is_offline = False
             
-            # --- Logika tworzenia alertu ---
+            # Czujnik, który jeszcze nigdy nie wysłał pomiaru (np. dopiero dodany),
+            # liczymy jako offline, ale nie tworzymy dla niego alertu.
+            if last_reading is None:
+                sensors_offline += 1
+                continue
+
             if is_offline:
                 sensors_offline += 1
                 # Czujnik jest offline. Sprawdź, czy już istnieje aktywny alert.

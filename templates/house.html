@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}{{ house.name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <a href="{% url 'dashboard' %}" class="breadcrumb"><i class="fas fa-arrow-left"></i> Dashboard</a>
+    <h1>{{ house.name }}</h1>
+    <p>{{ house.address|default:"Statystyki zużycia energii" }} · {{ house.price_per_kwh|floatformat:2 }} zł/kWh{% if house.monthly_limit_kwh %} · limit {{ house.monthly_limit_kwh|floatformat:0 }} kWh/mies.{% endif %}</p>
+  </div>
+  <div class="head-actions">
+    <a href="{% url 'house_settings' house.id %}" class="btn btn-sm"><i class="fas fa-gear"></i> Ustawienia domu</a>
+  </div>
+</div>
+
+<div class="grid grid-3">
+  {% for title, prev_label, cmp in comparisons %}
+  <div class="card stat">
+    <div class="stat-label">{{ title }}</div>
+    <div class="stat-value">{{ cmp.current|floatformat:2 }}<span class="unit">kWh</span></div>
+    <div class="stat-sub">
+      {% if cmp.previous %}
+        {{ prev_label }}: {{ cmp.previous|floatformat:2 }} kWh ·
+        {% if cmp.change_percent > 0 %}<span class="trend-up"><i class="fas fa-arrow-up"></i> {{ cmp.change_percent|floatformat:1 }}%</span>
+        {% elif cmp.change_percent < 0 %}<span class="trend-down"><i class="fas fa-arrow-down"></i> {{ cmp.change_percent|floatformat:1 }}%</span>
+        {% else %}bez zmian{% endif %}
+      {% else %}
+        brak danych za {{ prev_label }}
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card card-body section">
+  <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center;">
+    <div>
+      <div class="stat-label"><i class="fas fa-chart-line"></i> Prognoza na koniec miesiąca</div>
+      <div class="muted small">Ekstrapolacja liniowa zużycia od początku miesiąca</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="stat-value" style="margin:0;">{{ prediction.predicted_kwh|floatformat:1 }}<span class="unit">kWh</span></div>
+      <div class="stat-sub">ok. {{ prediction.predicted_cost|floatformat:2 }} zł</div>
+    </div>
+  </div>
+  {% if house.monthly_limit_kwh %}
+  {% widthratio prediction.current_kwh house.monthly_limit_kwh 100 as used %}
+  <div style="margin-top:14px;">
+    <div class="muted small" style="margin-bottom:6px;">Wykorzystanie limitu: {{ prediction.current_kwh|floatformat:1 }} z {{ house.monthly_limit_kwh|floatformat:0 }} kWh ({{ used }}%)</div>
+    <div class="progress {% if prediction.current_kwh > house.monthly_limit_kwh %}over{% endif %}"><span style="width: {% if used|add:0 > 100 %}100{% else %}{{ used }}{% endif %}%"></span></div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="grid grid-main section">
+  <div class="stack">
+    <div class="card">
+      <div class="card-head"><h2><i class="fas fa-chart-column"></i> Zużycie dzienne – ostatnie 14 dni</h2></div>
+      <div class="chart short"><canvas id="daily-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2><i class="fas fa-calendar-days"></i> Historia 12 miesięcy</h2></div>
+      <div class="chart short"><canvas id="history-chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2><i class="fas fa-ranking-star"></i> Czujniki w tym miesiącu</h2></div>
+    <ul class="list">
+      {% for r in rankings %}
+      <li>
+        <a class="list-item" href="{% url 'sensor_detail' r.sensor.id %}" style="flex-wrap:wrap;">
+          <span class="sensor-icon" style="color: {{ r.sensor.color }};"><i class="fas fa-{{ r.sensor.icon|default:'microchip' }}"></i></span>
+          <span class="list-main">
+            <span class="list-title">{{ r.sensor.name }}</span><br>
+            <span class="list-sub">{{ r.cost|floatformat:2 }} zł · {{ r.share|floatformat:0 }}%</span>
+          </span>
+          <span class="list-value">{{ r.kwh|floatformat:2 }} kWh</span>
+          <span class="progress thin" style="width:100%;"><span style="width: {{ r.share|stringformat:'.1f' }}%"></span></span>
+        </a>
+      </li>
+      {% empty %}
+      <li class="list-item muted">Brak czujników.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+{{ chart_daily|json_script:"daily-data" }}
+{{ chart_history|json_script:"history-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const bar = (id, rows, color, digits) => new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: { labels: rows.map(r => r.label), datasets: [{ data: rows.map(r => r.kwh), backgroundColor: color, borderRadius: 4 }] },
+    options: EM.chartOptions({ plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: (c) => ` ${EM.num(c.parsed.y, digits)} kWh` + (rows[c.dataIndex].cost !== undefined ? ` · ${EM.num(rows[c.dataIndex].cost, 2)} zł` : '') } } } }),
+  });
+  bar('daily-chart', EM.readJSON('daily-data') || [], EM.css('--accent'), 2);
+  bar('history-chart', EM.readJSON('history-data') || [], EM.css('--violet'), 1);
+})();
+</script>
+{% endblock %}

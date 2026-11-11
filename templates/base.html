@@ -1,348 +1,77 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="pl" data-theme="{{ user_theme|default:'dark' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Energy Monitor{% endblock %}</title>
+  <title>{% block title %}Energy Monitor{% endblock %} – Energy Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --bg-primary: #0f172a;
-      --bg-secondary: #1e293b;
-      --bg-tertiary: #334155;
-      --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-      --accent: #3b82f6;
-      --accent-hover: #2563eb;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --border: #334155;
-      --shadow: rgba(0, 0, 0, 0.3);
-      --text-muted: #64748b;
-      --page-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      --card-gradient: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-      --surface-inset: rgba(15, 23, 42, 0.6);
-      --surface-inset-soft: rgba(15, 23, 42, 0.4);
-      --surface-hover: rgba(148, 163, 184, 0.1);
-      --chart-grid: rgba(148, 163, 184, 0.15);
-      color-scheme: dark;
-    }
-
-    /* Motyw jasny – wybierany w ustawieniach użytkownika */
-    [data-theme="light"] {
-      --bg-primary: #f1f5f9;
-      --bg-secondary: #ffffff;
-      --bg-tertiary: #e2e8f0;
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #64748b;
-      --border: #cbd5e1;
-      --shadow: rgba(15, 23, 42, 0.08);
-      --page-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      --card-gradient: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-      --surface-inset: #f8fafc;
-      --surface-inset-soft: #f1f5f9;
-      --surface-hover: rgba(15, 23, 42, 0.05);
-      --chart-grid: rgba(15, 23, 42, 0.08);
-      color-scheme: light;
-    }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: var(--page-gradient);
-      background-attachment: fixed;
-      color: var(--text-primary);
-      min-height: 100vh;
-      line-height: 1.6;
-    }
-
-    /* Navbar */
-    .navbar {
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 2rem;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 6px var(--shadow);
-    }
-
-    .navbar-content {
-      max-width: 1400px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .navbar-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      text-decoration: none;
-      transition: transform 0.3s ease;
-    }
-
-    .navbar-brand:hover {
-      transform: scale(1.05);
-    }
-
-    .navbar-brand i {
-      color: var(--accent);
-      font-size: 1.75rem;
-    }
-
-    .navbar-menu {
-      display: flex;
-      gap: 1.5rem;
-      align-items: center;
-    }
-
-    .nav-link {
-      color: var(--text-secondary);
-      text-decoration: none;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .nav-link:hover {
-      color: var(--text-primary);
-      background: var(--bg-tertiary);
-    }
-
-    .nav-link.active {
-      color: var(--accent);
-      background: rgba(59, 130, 246, 0.1);
-    }
-
-    /* Styl dla przycisku wylogowania, aby wyglądał jak link/przycisk */
-    .btn-logout {
-      background: var(--danger);
-      color: white;
-      border: none;
-      padding: 0.5rem 1.25rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-weight: 600;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Dziedziczenie czcionki */
-      font-size: 1rem; /* Upewnij się, że rozmiar czcionki jest spójny */
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .btn-logout:hover {
-      background: #dc2626;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-    }
-    
-    /* Wrapper dla formularza wylogowania, aby nie psuł layoutu */
-    .logout-form-wrapper {
-      margin: 0;
-      padding: 0;
-      display: inline;
-    }
-
-    .btn-theme {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      transition: all 0.3s ease;
-    }
-
-    .btn-theme:hover {
-      color: var(--accent);
-      border-color: var(--accent);
-    }
-
-    /* Komunikaty (messages) */
-    .messages {
-      max-width: 1400px;
-      margin: 1rem auto 0;
-      padding: 0 2rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .message {
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .message.success { border-color: var(--success); }
-    .message.error { border-color: var(--danger); }
-    .message.warning { border-color: var(--warning); }
-
-    /* Container */
-    .container {
-      max-width: 1400px;
-      margin: 2rem auto;
-      padding: 0 2rem;
-    }
-
-    /* Card */
-    .card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      box-shadow: 0 8px 16px var(--shadow);
-      transition: all 0.3s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 24px var(--shadow);
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .fade-in {
-      animation: fadeIn 0.6s ease-out;
-    }
-
-    /* Responsive */
-    @media (max-width: 900px) { /* Zwiększony breakpoint dla lepszego menu */
-      .navbar-content {
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .navbar-menu {
-        flex-direction: column;
-        width: 100%;
-        align-items: stretch; /* Rozciągnij elementy w kolumnie */
-      }
-      
-      .logout-form-wrapper {
-        display: block; /* Formularz zajmie całą szerokość */
-      }
-      
-      .btn-logout {
-        width: 100%; /* Przycisk wylogowania na całą szerokość */
-        justify-content: center; /* Wyśrodkuj tekst w przycisku */
-      }
-
-      .container {
-        padding: 0 1rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="{% static 'sensors/app.css' %}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
   {% if user.is_authenticated %}
-  <nav class="navbar">
-    <div class="navbar-content">
-      <a href="{% url 'dashboard' %}" class="navbar-brand">
-        <i class="fas fa-bolt"></i>
+  {% with path=request.path %}
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="{% url 'dashboard' %}" class="brand">
+        <span class="brand-logo"><i class="fas fa-bolt"></i></span>
         Energy Monitor
       </a>
-      <div class="navbar-menu">
-        <a href="{% url 'dashboard' %}" class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}">
-          <i class="fas fa-chart-line"></i>
-          Dashboard
+      <button class="icon-btn nav-toggle" type="button" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      <div class="nav-links">
+        <a href="{% url 'dashboard' %}" class="nav-link {% if path == '/dashboard/' or '/house/' in path or '/sensor/' in path %}active{% endif %}">
+          <i class="fas fa-gauge-high"></i> Dashboard
         </a>
-        
-        <a href="{% url 'alerts' %}" class="nav-link {% if request.path == '/dashboard/alerts/' %}active{% endif %}">
-          <i class="fas fa-bell"></i>
-          Alerty
+        <a href="{% url 'alerts' %}" class="nav-link {% if '/alerts/' in path %}active{% endif %}">
+          <i class="fas fa-bell"></i> Alerty
+          {% if unread_alerts_count %}<span class="nav-count">{{ unread_alerts_count }}</span>{% endif %}
         </a>
-
+        <a href="{% url 'account' %}" class="nav-link {% if '/account/' in path %}active{% endif %}">
+          <i class="fas fa-user"></i> Konto
+        </a>
         {% if user.is_staff %}
-        <a href="{% url 'admin_dashboard' %}" class="nav-link {% if '/dashboard/admin-panel/' in request.path %}active{% endif %}">
-          <i class="fas fa-crown"></i>
-          Admin Panel
+        <a href="{% url 'admin_dashboard' %}" class="nav-link {% if '/admin-panel/' in path %}active{% endif %}">
+          <i class="fas fa-screwdriver-wrench"></i> Administracja
         </a>
         {% endif %}
-        
-        <a href="{% url 'settings' %}" class="nav-link {% if request.path == '/dashboard/settings/' %}active{% endif %}">
-          <i class="fas fa-cog"></i>
-          Ustawienia
-        </a>
-
-        <a href="{% url 'profile' %}" class="nav-link {% if request.path == '/dashboard/profile/' %}active{% endif %}">
-          <i class="fas fa-user"></i>
-          {{ user.username }}
-        </a>
-        
-        <form action="{% url 'toggle_theme' %}" method="POST" class="logout-form-wrapper">
+      </div>
+      <div class="nav-actions">
+        <span class="muted small">{{ user.username }}</span>
+        <form action="{% url 'toggle_theme' %}" method="post">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
-          <button type="submit" class="btn-theme" title="Przełącz motyw jasny / ciemny">
+          <button type="submit" class="icon-btn" title="Przełącz motyw jasny / ciemny" aria-label="Przełącz motyw">
             {% if user_theme == 'light' %}<i class="fas fa-moon"></i>{% else %}<i class="fas fa-sun"></i>{% endif %}
           </button>
         </form>
-
-        <form action="{% url 'logout' %}" method="POST" class="logout-form-wrapper">
+        <form action="{% url 'logout' %}" method="post">
           {% csrf_token %}
-          <button type="submit" class="btn-logout">
-            <i class="fas fa-sign-out-alt"></i>
-            Wyloguj
-          </button>
+          <button type="submit" class="btn btn-sm"><i class="fas fa-right-from-bracket"></i> Wyloguj</button>
         </form>
       </div>
     </div>
   </nav>
+  {% endwith %}
   {% endif %}
 
   {% if messages %}
-  <div class="messages">
+  <div class="flash">
     {% for message in messages %}
-    <div class="message {{ message.tags }}">
-      {% if message.tags == 'success' %}<i class="fas fa-check-circle" style="color: var(--success);"></i>{% elif message.tags == 'error' %}<i class="fas fa-exclamation-circle" style="color: var(--danger);"></i>{% else %}<i class="fas fa-info-circle" style="color: var(--accent);"></i>{% endif %}
+    <div class="flash-item {{ message.tags }}">
+      {% if message.tags == 'error' %}<i class="fas fa-circle-exclamation"></i>{% else %}<i class="fas fa-circle-check"></i>{% endif %}
       {{ message }}
     </div>
     {% endfor %}
   </div>
   {% endif %}
 
-  <div class="container">
+  <main class="page">
     {% block content %}{% endblock %}
-  </div>
+  </main>
 
+  <script src="{% static 'sensors/app.js' %}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

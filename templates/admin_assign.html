@@ -1,273 +1,53 @@
 {% extends 'base.html' %}
-
-{% block title %}Przypisz dom - Energy Monitor{% endblock %}
-
-{% block extra_css %}
-<style>
-  .assign-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .assign-header {
-    margin-bottom: 2rem;
-  }
-
-  .assign-header h1 {
-    font-size: 2rem;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .form-panel {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-  }
-
-  .form-panel h2 {
-    color: var(--text-primary);
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
-  .form-group {
-    margin-bottom: 1.5rem;
-  }
-
-  .form-group.full-width {
-    grid-column: span 2;
-  }
-
-  .form-group label {
-    display: block;
-    color: var(--text-primary);
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-
-  .form-control {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: var(--surface-inset);
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    color: var(--text-primary);
-    font-size: 1rem;
-    transition: all 0.3s ease;
-  }
-
-  .form-control:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .btn-submit {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: white;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 0.75rem;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    width: 100%;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .btn-submit:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
-  }
-
-  .houses-list {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
-    padding: 2rem;
-  }
-
-  .houses-list h2 {
-    color: var(--text-primary);
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .houses-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .houses-table thead {
-    background: var(--surface-inset);
-  }
-
-  .houses-table th {
-    padding: 1rem;
-    text-align: left;
-    color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-  }
-
-  .houses-table td {
-    padding: 1rem;
-    color: var(--text-primary);
-    border-top: 1px solid var(--border);
-  }
-
-  .houses-table tbody tr {
-    transition: background 0.3s ease;
-  }
-
-  .houses-table tbody tr:hover {
-    background: rgba(59, 130, 246, 0.05);
-  }
-
-  .user-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.75rem;
-    background: rgba(139, 92, 246, 0.1);
-    color: #8b5cf6;
-    border-radius: 0.5rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-
-  .sensor-count {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.75rem;
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-    border-radius: 0.5rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-</style>
-{% endblock %}
+{% block title %}Domy – administracja{% endblock %}
 
 {% block content %}
-<div class="assign-container">
-  <div class="assign-header">
-    <h1><i class="fas fa-user-plus"></i> Przypisz dom do użytkownika</h1>
+<div class="page-head">
+  <div>
+    <h1>Domy</h1>
+    <p>Przypisywanie domów do kont użytkowników</p>
+  </div>
+</div>
+{% include '_admin_tabs.html' with tab='houses' %}
+
+<div class="grid grid-main">
+  <div class="card">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Dom</th><th>Użytkownik</th><th class="right">Czujniki</th><th class="right">Cena</th><th>Dodano</th></tr></thead>
+        <tbody>
+          {% for house in all_houses %}
+          <tr>
+            <td><strong>{{ house.name }}</strong><div class="muted small">{{ house.address|default:"—" }}</div></td>
+            <td>{{ house.user.username }}</td>
+            <td class="right">{{ house.sensors.count }}</td>
+            <td class="right">{{ house.price_per_kwh|floatformat:2 }} zł</td>
+            <td>{{ house.created_at|date:"Y-m-d" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="muted" style="text-align:center;">Brak domów.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Formularz -->
-  <div class="form-panel">
-    <h2><i class="fas fa-plus-circle"></i> Nowy dom</h2>
-    
-    <form method="post">
-      {% csrf_token %}
-      
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="user_id">Użytkownik *</label>
-          <select name="user_id" id="user_id" class="form-control" required>
-            <option value="">Wybierz użytkownika</option>
-            {% for user in users %}
-              <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="house_name">Nazwa domu *</label>
-          <input type="text" name="house_name" id="house_name" class="form-control" placeholder="np. Mój Dom" required>
-        </div>
-
-        <div class="form-group">
-          <label for="address">Adres</label>
-          <input type="text" name="address" id="address" class="form-control" placeholder="ul. Przykładowa 1, Warszawa">
-        </div>
-
-        <div class="form-group">
-          <label for="price_per_kwh">Cena za kWh (PLN) *</label>
-          <input type="number" name="price_per_kwh" id="price_per_kwh" class="form-control" value="0.80" step="0.01" min="0" required>
-        </div>
-
-        <div class="form-group full-width">
-          <button type="submit" class="btn-submit">
-            <i class="fas fa-check"></i> Przypisz dom
-          </button>
-        </div>
+  <form method="post" class="card">
+    {% csrf_token %}
+    <div class="card-head"><h2><i class="fas fa-plus"></i> Nowy dom</h2></div>
+    <div class="card-body stack" style="gap: 14px;">
+      <div class="field">
+        <label for="user_id">Użytkownik</label>
+        <select name="user_id" id="user_id" required>
+          <option value="">Wybierz użytkownika</option>
+          {% for u in users %}<option value="{{ u.id }}">{{ u.username }}{% if u.email %} ({{ u.email }}){% endif %}</option>{% endfor %}
+        </select>
       </div>
-    </form>
-  </div>
-
-  <!-- Lista istniejących domów -->
-  <div class="houses-list">
-    <h2><i class="fas fa-list"></i> Ostatnio dodane domy</h2>
-    
-    <table class="houses-table">
-      <thead>
-        <tr>
-          <th>Nazwa</th>
-          <th>Użytkownik</th>
-          <th>Adres</th>
-          <th>Czujniki</th>
-          <th>Cena/kWh</th>
-          <th>Data dodania</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for house in all_houses %}
-        <tr>
-          <td>
-            <strong>{{ house.name }}</strong>
-          </td>
-          <td>
-            <span class="user-badge">
-              <i class="fas fa-user"></i>
-              {{ house.user.username }}
-            </span>
-          </td>
-          <td>{{ house.address|default:"Brak adresu" }}</td>
-          <td>
-            <span class="sensor-count">
-              <i class="fas fa-plug"></i>
-              {{ house.sensors.count }}
-            </span>
-          </td>
-          <td>{{ house.price_per_kwh }} PLN</td>
-          <td>{{ house.created_at|date:"Y-m-d H:i" }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-            Brak domów w systemie
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+      <div class="field"><label for="house_name">Nazwa domu</label><input type="text" name="house_name" id="house_name" placeholder="np. Mieszkanie" required></div>
+      <div class="field"><label for="address">Adres</label><input type="text" name="address" id="address" placeholder="opcjonalnie"></div>
+      <div class="field"><label for="price">Cena za kWh [zł]</label><input type="number" name="price_per_kwh" id="price" value="0.80" step="0.01" min="0" required></div>
+      <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-check"></i> Przypisz dom</button>
+    </div>
+  </form>
 </div>
 {% endblock %}

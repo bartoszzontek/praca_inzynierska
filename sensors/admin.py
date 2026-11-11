@@ -29,21 +29,6 @@ class OnlineStatusFilter(SimpleListFilter):
         return queryset
 
 
-class SensorDataInline(admin.TabularInline):
-    """Inline dla danych czujnika"""
-    model = SensorData
-    extra = 0
-    fields = ('timestamp', 'voltage', 'current', 'power', 'energy', 'frequency', 'pf', 'reactive_power')
-    readonly_fields = ('timestamp', 'voltage', 'current', 'power', 'energy', 'frequency', 'pf', 'reactive_power')
-    can_delete = False
-    max_num = 10 # Użyj max_num do ograniczenia, a nie slice
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        # POPRAWKA BŁĘDU: Usunięto [:10]
-        return qs.order_by('-timestamp')
-
-
 class SensorInline(admin.TabularInline):
     """Inline dla czujników"""
     model = Sensor
@@ -64,9 +49,7 @@ class AlertInline(admin.TabularInline):
     max_num = 5
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        # POPRAWKA BŁĘDU: Usunięto [:5]
-        return qs.order_by('-created_at')
+        return super().get_queryset(request).order_by('-created_at')
 
 
 @admin.register(House)
@@ -83,7 +66,7 @@ class HouseAdmin(admin.ModelAdmin):
     )
     list_filter = ('user', 'created_at')
     search_fields = ('name', 'address', 'user__username', 'user__email')
-    inlines = [SensorInline, AlertInline] # Ten inline używa AlertInline, stąd błąd
+    inlines = [SensorInline, AlertInline]
     readonly_fields = ('created_at', 'get_monthly_usage', 'get_current_power')
 
     fieldsets = (
@@ -175,12 +158,11 @@ class SensorAdmin(admin.ModelAdmin):
     )
     list_filter = (OnlineStatusFilter, 'is_active', 'house', 'created_at')
     search_fields = ('sensor_id', 'name', 'house__name', 'location', 'description')
-    inlines = [SensorDataInline] # Ten inline używa SensorDataInline
     readonly_fields = ('created_at', 'get_last_reading', 'get_statistics')
 
     fieldsets = (
         ('Informacje podstawowe', {
-            'fields': ('house', 'sensor_id', 'name', 'description')
+            'fields': ('house', 'sensor_id', 'name', 'description', 'api_token')
         }),
         ('Lokalizacja i wygląd', {
             'fields': ('location', 'icon', 'color')
@@ -406,8 +388,8 @@ class AlertAdmin(admin.ModelAdmin):
 
 @admin.register(UserSettings)
 class UserSettingsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'theme', 'email_alerts', 'alert_frequency', 'show_predictions', 'updated_at')
-    list_filter = ('theme', 'email_alerts', 'show_predictions')
+    list_display = ('user', 'theme', 'email_alerts', 'alert_frequency', 'monthly_goal_kwh', 'updated_at')
+    list_filter = ('theme', 'email_alerts', 'alert_frequency')
     search_fields = ('user__username', 'user__email')
     readonly_fields = ('created_at', 'updated_at')
 
@@ -421,8 +403,8 @@ class UserSettingsAdmin(admin.ModelAdmin):
         ('Alerty', {
             'fields': ('email_alerts', 'alert_frequency')
         }),
-        ('Cele i predykcje', {
-            'fields': ('show_predictions', 'monthly_goal_kwh')
+        ('Cel miesięczny', {
+            'fields': ('monthly_goal_kwh',)
         }),
         ('Meta', {
             'fields': ('created_at', 'updated_at'),

@@ -5,9 +5,8 @@ Co 15 sekund wysyła pomiar w tym samym formacie i na ten sam adres co prawdziwy
 moduł, więc sprawdza cały łańcuch: Cloudflare -> tunel -> Nginx -> Django -> baza.
 Uruchamiany jako kontener `simulator` (profil "demo" w docker-compose.yml).
 
-Przy starcie sam przygotowuje potrzebne obiekty w bazie:
-- użytkownika technicznego "symulator" (is_staff, bez hasła) z tokenem API,
-- dom i czujnik SIM-001 przypisane do pierwszego superużytkownika.
+Przy starcie sam przygotowuje w bazie dom i czujnik SIM-001 (przypisane do pierwszego
+superużytkownika) i wysyła pomiary z kluczem API tego czujnika – tak jak prawdziwy moduł.
 """
 import json
 import math
@@ -26,7 +25,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
 django.setup()
 
 from django.contrib.auth.models import User  # noqa: E402
-from rest_framework.authtoken.models import Token  # noqa: E402
 from sensors.models import House, Sensor  # noqa: E402
 
 URL = os.environ.get('SIM_URL', 'https://energymonitor.fun/dashboard/admin/sensor/readings/')
@@ -39,7 +37,7 @@ def log(msg):
 
 
 def prepare():
-    """Zwraca token API; czeka, aż w bazie pojawi się konto administratora."""
+    """Zwraca klucz API czujnika; czeka, aż w bazie pojawi się konto administratora."""
     while True:
         owner = User.objects.filter(is_superuser=True).order_by('id').first()
         if owner:
@@ -47,23 +45,21 @@ def prepare():
         log('Brak konta administratora - czekam 60 s (python manage.py createsuperuser)')
         time.sleep(60)
 
-    bot, created = User.objects.get_or_create(username='symulator', defaults={'is_staff': True})
-    if created:
-        bot.set_unusable_password()
-        bot.save()
-    token, _ = Token.objects.get_or_create(user=bot)
+    # konto techniczne z wcześniejszej wersji symulatora nie jest już potrzebne
+    User.objects.filter(username='symulator', is_superuser=False).delete()
 
-    if not Sensor.objects.filter(sensor_id=SENSOR_ID).exists():
+    sensor = Sensor.objects.filter(sensor_id=SENSOR_ID).first()
+    if sensor is None:
         house, _ = House.objects.get_or_create(
             user=owner, name='Dom (symulacja)',
             defaults={'address': 'dane testowe z symulatora', 'price_per_kwh': 1.10},
         )
-        Sensor.objects.create(
+        sensor = Sensor.objects.create(
             sensor_id=SENSOR_ID, house=house, name='Symulator - obwód gniazd', location='Kuchnia',
             description='Czujnik wirtualny generujący dane testowe',
         )
-    log(f'Gotowe: właściciel={owner.username}, czujnik={SENSOR_ID}, adres={URL}')
-    return token.key
+    log(f'Gotowe: czujnik={SENSOR_ID} (dom: {sensor.house.name}), adres={URL}')
+    return sensor.api_token
 
 
 class Household:

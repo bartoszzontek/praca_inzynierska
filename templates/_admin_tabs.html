@@ -1,0 +1,6 @@
+<nav class="segmented" style="margin-bottom: 20px;">
+  <a href="{% url 'admin_dashboard' %}" class="{% if tab == 'overview' %}active{% endif %}">Przegląd</a>
+  <a href="{% url 'admin_sensors' %}" class="{% if tab == 'sensors' %}active{% endif %}">Czujniki</a>
+  <a href="{% url 'assign_house' %}" class="{% if tab == 'houses' %}active{% endif %}">Domy</a>
+  <a href="/admin/">Panel Django <i class="fas fa-arrow-up-right-from-square"></i></a>
+</nav>

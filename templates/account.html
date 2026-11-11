@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load l10n %}
+{% block title %}Konto{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Konto</h1>
+    <p>{{ user.username }} · konto od {{ user.date_joined|date:"d.m.Y" }}{% if user.is_staff %} · administrator{% endif %}</p>
+  </div>
+</div>
+
+<div class="grid grid-main">
+  <form method="post" class="card">
+    {% csrf_token %}
+    <div class="card-head"><h2><i class="fas fa-sliders"></i> Ustawienia</h2></div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="field full">
+          <label for="email">Adres email</label>
+          <input id="email" type="email" name="email" value="{{ user.email }}" placeholder="adres do powiadomień">
+          <p class="help">Na ten adres trafiają alerty, jeśli dom nie ma ustawionego osobnego adresu.</p>
+        </div>
+
+        <div class="field full">
+          <span class="label">Motyw</span>
+          <div class="choice">
+            <label><input type="radio" name="theme" value="dark" {% if user_settings.theme == 'dark' %}checked{% endif %} onchange="document.documentElement.dataset.theme='dark'"> <i class="fas fa-moon"></i> Ciemny</label>
+            <label><input type="radio" name="theme" value="light" {% if user_settings.theme == 'light' %}checked{% endif %} onchange="document.documentElement.dataset.theme='light'"> <i class="fas fa-sun"></i> Jasny</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="goal">Cel miesięczny [kWh]</label>
+          <input id="goal" type="number" name="monthly_goal_kwh" min="0" step="0.1" placeholder="np. 150"
+                 value="{% if user_settings.monthly_goal_kwh %}{{ user_settings.monthly_goal_kwh|unlocalize }}{% endif %}">
+          <p class="help">Suma wszystkich domów. Puste pole wyłącza cel.</p>
+        </div>
+        <div class="field">
+          <label for="refresh">Odświeżanie strony czujnika [s]</label>
+          <input id="refresh" type="number" name="live_refresh_interval" min="1" max="60" value="{{ user_settings.live_refresh_interval }}">
+          <p class="help">Od 1 do 60 sekund.</p>
+        </div>
+
+        <div class="fieldset-title">Powiadomienia email</div>
+        <div class="full">
+          <div class="row-setting">
+            <div><strong>Alerty email</strong><div class="muted small">Wysyłaj alerty na adres email</div></div>
+            <label class="switch"><input type="checkbox" name="email_alerts" {% if user_settings.email_alerts %}checked{% endif %}><span></span></label>
+          </div>
+        </div>
+        <div class="field full">
+          <label for="freq">Częstotliwość</label>
+          <select id="freq" name="alert_frequency">
+            <option value="immediate" {% if user_settings.alert_frequency == 'immediate' %}selected{% endif %}>Natychmiast – osobny email przy każdym alercie</option>
+            <option value="hourly" {% if user_settings.alert_frequency == 'hourly' %}selected{% endif %}>Co godzinę – podsumowanie</option>
+            <option value="daily" {% if user_settings.alert_frequency == 'daily' %}selected{% endif %}>Raz dziennie – podsumowanie</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Zapisz ustawienia</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="stack">
+    <div class="card">
+      <div class="card-head"><h2><i class="fas fa-user"></i> Podsumowanie</h2></div>
+      <div class="card-body">
+        <div class="row-setting"><span class="muted">Domy</span><strong>{{ houses|length }}</strong></div>
+        <div class="row-setting"><span class="muted">Czujniki</span><strong>{{ total_sensors }}</strong></div>
+        <div class="row-setting"><span class="muted">Alerty (łącznie)</span><strong>{{ total_alerts }}</strong></div>
+        <div class="row-setting"><span class="muted">Ostatnie logowanie</span><strong>{{ user.last_login|date:"d.m.Y H:i"|default:"—" }}</strong></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2><i class="fas fa-house"></i> Moje domy</h2></div>
+      <ul class="list">
+        {% for house in houses %}
+        <li>
+          <a class="list-item" href="{% url 'house' house.id %}">
+            <span class="sensor-icon"><i class="fas fa-house"></i></span>
+            <span class="list-main"><span class="list-title">{{ house.name }}</span><br><span class="list-sub">{{ house.address|default:"—" }}</span></span>
+            <span class="badge">{{ house.sensors.count }} czuj.</span>
+          </a>
+        </li>
+        {% empty %}
+        <li class="list-item muted">Brak domów – przypisuje je administrator.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
